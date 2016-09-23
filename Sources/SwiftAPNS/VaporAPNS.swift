@@ -3,11 +3,14 @@ import Transport
 import Foundation
 import SwiftString
 import JSON
+import Vapor
+import TLS
 
 public class VaporAPNS {
     private var httpClient: Client<TCPClientStream, Serializer<Request>, Parser<Response>>!
     private var options: Options!
     fileprivate var apnsAuthKey: String!
+    var sock: TLS.Socket!
     
     public init?(authKeyPath: String, options: Options? = nil) throws {
         guard let tokenStr = tokenStringFor(authKeyPath: authKeyPath) else {
@@ -22,25 +25,30 @@ public class VaporAPNS {
     }
     
     private func connect() throws {
-        httpClient = try Client<TCPClientStream, Serializer<Request>, Parser<Response>>.init(scheme: "https", host: self.hostURL(development: self.options.development), port: self.options.port.rawValue)
+//        httpClient = try Client<TCPClientStream, Serializer<Request>, Parser<Response>>.init(scheme: "https", host: self.hostURL(development: self.options.development), port: self.options.port.rawValue, securityLayer: .tls(nil))
+        sock = try TLS.Socket(mode: .client, hostname: self.hostURL(development: self.options.development), port: UInt16(self.options.port.rawValue))
+        try sock.connect(servername: self.hostURL(development: self.options.development))
+//        let t = try sock.receive()
+//        print (t)
     }
-        public func send(applePushMessage message: ApplePushMessage) -> Result {
+    
+    public func send(applePushMessage message: ApplePushMessage) -> Result {
         do {
             let headers = self.requestHeaders(for: message)
-            
-            let response = try httpClient.post(path: "/3/device/\(message.deviceToken)", headers: headers)
-            print (response.description)
+            let headerBytes = Encoder().encode(headers)
+            try sock.send(headerBytes)
+            let line = try sock.receiveLine()
+            print (line)
+//            let response = try httpClient.post(path: "/3/device/\(message.deviceToken)", headers: headers)
+//            print (response.json)
             return Result.success(apnsId: message.messageId, serviceStatus: .success)
         } catch {
             return Result.networkError(apnsId: message.messageId, error: error)
         }
     }
-    
-}
-
-extension VaporAPNS {
-    fileprivate func requestHeaders(for message: ApplePushMessage) -> [HTTP.HeaderKey : String] {
-        var headers: [HTTP.HeaderKey : String] = [
+   
+    private func requestHeaders(for message: ApplePushMessage) -> [Header] {
+        var headers: [String : String] = [
             "authorization": "bearer \(apnsAuthKey)",
             "apns-id": message.messageId,
             "apns-expiration": "\(message.expirationDate?.timeIntervalSince1970.rounded() ?? 0)",
@@ -56,7 +64,16 @@ extension VaporAPNS {
             headers["thread-id"] = threadId
         }
         
-        return headers
+        var headerss: [Header] = []
+        for (key, value) in headers {
+            headerss.append((key, value))
+        }
+        print (headerss)
+        print (headerss)
+        print (headerss)
+        print (headerss)
+
+        return headerss
     
     }
 }

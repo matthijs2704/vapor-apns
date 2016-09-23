@@ -28,7 +28,7 @@ class VaporAPNSTests: XCTestCase {
     func testSendPush() throws {
         let correctVaporAPNSInstance = try VaporAPNS(authKeyPath: "/Users/matthijs/Downloads/APNSAuthKey_T36248L7C8.p8")
         
-        let pushMessage = ApplePushMessage(topic: "nl.logicbit.ReviusSchoolkrant", priority: .immediately, payload: Dictionary(), deviceToken: "", sandbox: true)
+        let pushMessage = ApplePushMessage(topic: "nl.logicbit.ReviusSchoolkrant", priority: .immediately, payload: Dictionary(), deviceToken: "43e798c31a282d129a34d84472bbdd7632562ff0732b58a85a27c5d9fdf59b69", sandbox: true)
         
         let t = correctVaporAPNSInstance?.send(applePushMessage: pushMessage)
         print (t)
