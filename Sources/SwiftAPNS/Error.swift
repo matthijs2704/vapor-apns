@@ -8,7 +8,7 @@
 
 import Foundation
 public extension VaporAPNS {
-    public enum Error: String, CustomStringConvertible {
+    public enum APNSError: String, CustomStringConvertible {
         case payloadEmpty
         case payloadTooLarge
         case badTopic

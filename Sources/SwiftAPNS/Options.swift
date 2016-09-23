@@ -8,7 +8,6 @@
 
 import Foundation
 extension VaporAPNS {
-    
     public struct Options: CustomStringConvertible {
         public enum Port: Int {
             case p443 = 443, p2197 = 2197
