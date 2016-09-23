@@ -17,6 +17,10 @@ DerivedData/
 !default.perspectivev3
 xcuserdata/
 
+*.xcodeproj
+*.xcodeproj/*
+!*.xcodeproj/project.pbxproj
+
 ## Other
 *.moved-aside
 *.xcuserstate
@@ -34,7 +38,7 @@ playground.xcworkspace
 # Swift Package Manager
 #
 # Add this line if you want to avoid checking in source code from Swift Package Manager dependencies.
-# Packages/
+Packages/
 .build/
 
 # CocoaPods
@@ -63,3 +67,4 @@ fastlane/report.xml
 fastlane/Preview.html
 fastlane/screenshots
 fastlane/test_output
+VaporAPNS.xcodeproj
