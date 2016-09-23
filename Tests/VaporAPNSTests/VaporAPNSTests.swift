@@ -17,12 +17,20 @@ class VaporAPNSTests: XCTestCase {
         print ("Hi")
     }
     
-    func testInitializer() {
-        let wrongVaporAPNSInstance = VaporAPNS(authKeyPath: "/Users/matthijs/Downloads/APNSAuthKey_T36248L7C8.p9")
+    func testInitializer() throws {
+        let wrongVaporAPNSInstance = try VaporAPNS(authKeyPath: "/Users/matthijs/Downloads/APNSAuthKey_T36248L7C8.p9")
         XCTAssertNil(wrongVaporAPNSInstance)
         
-        let correctVaporAPNSInstance = VaporAPNS(authKeyPath: "/Users/matthijs/Downloads/APNSAuthKey_T36248L7C8.p8")
+        let correctVaporAPNSInstance = try VaporAPNS(authKeyPath: "/Users/matthijs/Downloads/APNSAuthKey_T36248L7C8.p8")
         XCTAssertNotNil(correctVaporAPNSInstance)
+    }
+    
+    func testSendPush() throws {
+        let correctVaporAPNSInstance = try VaporAPNS(authKeyPath: "/Users/matthijs/Downloads/APNSAuthKey_T36248L7C8.p8")
         
+        let pushMessage = ApplePushMessage(topic: "nl.logicbit.ReviusSchoolkrant", priority: .immediately, payload: Dictionary(), deviceToken: "", sandbox: true)
+        
+        let t = correctVaporAPNSInstance?.send(applePushMessage: pushMessage)
+        print (t)
     }
 }

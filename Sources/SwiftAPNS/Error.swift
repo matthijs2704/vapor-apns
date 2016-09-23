@@ -59,7 +59,6 @@ public extension VaporAPNS {
             case .serviceUnavailable: return "The service is unavailable."
             case .missingTopic: return "The apns-topic header of the request was not specified and was required. The apns-topic header is mandatory when the client is connected using a certificate that supports multiple topics."
             }
-            
         }
     }
 }

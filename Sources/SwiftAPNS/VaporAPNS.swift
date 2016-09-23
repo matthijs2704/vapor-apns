@@ -2,11 +2,12 @@ import HTTP
 import Transport
 import Foundation
 import SwiftString
+import JSON
 
 public class VaporAPNS {
     private var httpClient: Client<TCPClientStream, Serializer<Request>, Parser<Response>>!
     private var options: Options!
-    private var apnsAuthKey: String!
+    fileprivate var apnsAuthKey: String!
     
     public init?(authKeyPath: String, options: Options? = nil) throws {
         guard let tokenStr = tokenStringFor(authKeyPath: authKeyPath) else {
@@ -23,15 +24,44 @@ public class VaporAPNS {
     private func connect() throws {
         httpClient = try Client<TCPClientStream, Serializer<Request>, Parser<Response>>.init(scheme: "https", host: self.hostURL(development: self.options.development), port: self.options.port.rawValue)
     }
-    
-    public func send(applePushMessage message: ApplePushMessage) throws {
-        try httpClient.post(path: "/3/device/")
+        public func send(applePushMessage message: ApplePushMessage) -> Result {
+        do {
+            let headers = self.requestHeaders(for: message)
+            
+            let response = try httpClient.post(path: "/3/device/\(message.deviceToken)", headers: headers)
+            print (response.description)
+            return Result.success(apnsId: message.messageId, serviceStatus: .success)
+        } catch {
+            return Result.networkError(apnsId: message.messageId, error: error)
+        }
     }
     
 }
 
 extension VaporAPNS {
+    fileprivate func requestHeaders(for message: ApplePushMessage) -> [HTTP.HeaderKey : String] {
+        var headers: [HTTP.HeaderKey : String] = [
+            "authorization": "bearer \(apnsAuthKey)",
+            "apns-id": message.messageId,
+            "apns-expiration": "\(message.expirationDate?.timeIntervalSince1970.rounded() ?? 0)",
+            "apns-priority": "\(message.priority.rawValue)",
+            "apns-topic": message.topic
+        ]
+
+        if let collapseId = message.collapseIdentifier {
+            headers["apns-collapse-id"] = collapseId
+        }
+        
+        if let threadId = message.threadIdentifier {
+            headers["thread-id"] = threadId
+        }
+        
+        return headers
     
+    }
+}
+
+extension VaporAPNS {
     fileprivate func hostURL(development: Bool) -> String {
         if development {
             return "api.development.push.apple.com" //   "

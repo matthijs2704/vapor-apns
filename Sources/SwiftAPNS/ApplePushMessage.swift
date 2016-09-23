@@ -7,14 +7,21 @@
 //
 
 import Foundation
+import JSON
 
 /// Apple Push Notification Message
-public struct ApplePushMessage {
+public struct ApplePushMessage: NodeRepresentable {
     /// Message Id
     public let messageId:String = UUID().uuidString
     
     /// Application BundleID
     public let topic: String
+    
+    public let collapseIdentifier: String?
+
+    public let threadIdentifier: String?
+
+    public let expirationDate: NSDate?
     
     /// APNS Priority
     public let priority: Priority
@@ -43,11 +50,20 @@ public struct ApplePushMessage {
     /// Network error Clousure
     public var networkError:((Error?)->())?
     
-    public init(topic:String, priority:Priority, payload:Dictionary<String,Any>, deviceToken:String, sandbox:Bool = true) {
+    public init(topic:String, priority:Priority, expirationDate: NSDate? = nil, payload:Dictionary<String,Any>, deviceToken:String, sandbox:Bool = true, collapseIdentifier: String? = nil, threadIdentifier: String? = nil) {
         self.topic = topic
         self.priority = priority
+        self.expirationDate = expirationDate
         self.payload = payload
         self.deviceToken = deviceToken
         self.sandbox = sandbox
+        self.collapseIdentifier = collapseIdentifier
+        self.threadIdentifier = threadIdentifier
+    }
+    
+    public func makeNode(context: Context) throws -> Node {
+        return try Node(node: [
+        
+        ])
     }
 }
