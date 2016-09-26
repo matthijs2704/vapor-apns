@@ -5,7 +5,6 @@ import SwiftString
 import JSON
 import Vapor
 import CCurl
-import hpack
 
 public class VaporAPNS {
     private var options: Options
@@ -63,7 +62,7 @@ public class VaporAPNS {
             headersList = curl_slist_append(headersList, "Accept: application/json")
             headersList = curl_slist_append(headersList, "Content-Type: application/json")
             for header in headers {
-                headersList = curl_slist_append(headersList, "\(header.name): \(header.value)")
+                headersList = curl_slist_append(headersList, "\(header.key): \(header.value)")
             }
             
             curlHelperSetOptList(curlHandle, CURLOPT_HTTPHEADER, headersList)
@@ -87,7 +86,7 @@ public class VaporAPNS {
 //        }
     }
    
-    private func requestHeaders(for message: ApplePushMessage) -> [Header] {
+    private func requestHeaders(for message: ApplePushMessage) -> [String: String] {
         var headers: [String : String] = [
             "authorization": "bearer \(apnsAuthKey)",
             "apns-id": message.messageId,
@@ -103,13 +102,8 @@ public class VaporAPNS {
         if let threadId = message.threadIdentifier {
             headers["thread-id"] = threadId
         }
-        
-        var headerss: [Header] = []
-        for (key, value) in headers {
-            headerss.append((key, value))
-        }
        
-        return headerss
+        return headers
     
     }
 }
