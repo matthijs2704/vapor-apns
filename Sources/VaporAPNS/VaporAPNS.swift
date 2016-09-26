@@ -111,9 +111,9 @@ public class VaporAPNS {
 extension VaporAPNS {
     fileprivate func hostURL(development: Bool) -> String {
         if development {
-            return "api.development.push.apple.com" //   "
+            return "https://api.development.push.apple.com" //   "
         } else {
-            return "api.push.apple.com" //   /3/device/"
+            return "https://api.push.apple.com" //   /3/device/"
         }
     }
 }
