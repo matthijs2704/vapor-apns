@@ -11,7 +11,7 @@ import Foundation
 extension String {
     /// Converts the string (which is a path for the auth key) to a token string
     func tokenString() throws -> String {
-        guard let authKeyUrl = URL(string: self) else {
+        guard let authKeyUrl = URL(string: "file://\(self)") else {
             throw TokenError.invalidAuthKey
         }
         
