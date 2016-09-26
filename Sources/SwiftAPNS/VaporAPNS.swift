@@ -4,7 +4,7 @@ import Foundation
 import SwiftString
 import JSON
 import Vapor
-import TLS
+import CCurl
 import hpack
 
 public class VaporAPNS {
@@ -12,35 +12,79 @@ public class VaporAPNS {
     fileprivate var apnsAuthKey: String
     
     private var httpClient: Client<TCPClientStream, Serializer<Request>, Parser<Response>>?
-    private var sock: TLS.Socket?
+    private var curlHandle: UnsafeMutableRawPointer
     
-    public init?(authKeyPath: String, options: Options? = nil) throws {
-        self.apnsAuthKey = try authKeyPath.tokenString()
+    public init(authKeyPath: String, options: Options? = nil) throws {
         self.options = options ?? Options()
-        try connect()
+        self.apnsAuthKey = try authKeyPath.tokenString()
+        self.curlHandle = curl_easy_init()
+        
+        curlHelperSetOptInt(curlHandle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2_0)
     }
     
     private func connect() throws {
+        // Force Curl to HTTP/2 mode
+
 //        httpClient = try Client<TCPClientStream, Serializer<Request>, Parser<Response>>.init(scheme: "https", host: self.hostURL(development: self.options.development), port: self.options.port.rawValue, securityLayer: .tls(nil))
-        sock = try TLS.Socket(mode: .client, hostname: self.hostURL(development: self.options.development), port: UInt16(self.options.port.rawValue))
-        try sock?.connect(servername: self.hostURL(development: self.options.development))
-//        let t = try sock.receive()
+//        sock = try TLS.Socket(mode: .client, hostname: self.hostURL(development: self.options.development), port: UInt16(self.options.port.rawValue))
+//        try sock.connect(servername: self.hostURL(development: self.options.development))
+////        let t = try sock.receive()
 //        print (t)
     }
     
     public func send(applePushMessage message: ApplePushMessage) -> Result {
-        do {
+//        do {
             let headers = self.requestHeaders(for: message)
-            let headerBytes = Encoder().encode(headers)
-            try sock?.send(headerBytes)
-            let line = try sock?.receiveLine()
-            print (line)
+            var headersList: UnsafeMutablePointer<curl_slist>?
+            
+            // set url for push according env
+            curlHelperSetOptString(curlHandle, CURLOPT_URL, ("\(self.hostURL(development: message.sandbox))/3/device/\(message.deviceToken)"))
+            
+            // set port to 443 (we can omit it)
+            curlHelperSetOptInt(curlHandle, CURLOPT_PORT, 443)
+            
+            // follow location
+            curlHelperSetOptBool(curlHandle, CURLOPT_FOLLOWLOCATION, 1)
+            
+            // set POST request
+            curlHelperSetOptBool(curlHandle, CURLOPT_POST, 1)
+            
+            // setup payload
+            // TODO: Message payload
+//            guard let jsonString = message.payload.toString() else { return }
+//            let payload = jsonString
+            
+            curlHelperSetOptString(curlHandle, CURLOPT_POSTFIELDS, "")
+            
+            // set headers
+            curlHelperSetOptBool(curlHandle, CURLOPT_HEADER, 1)
+            // TODO: Headers
+
+            headersList = curl_slist_append(headersList, "Accept: application/json")
+            headersList = curl_slist_append(headersList, "Content-Type: application/json")
+            for header in headers {
+                headersList = curl_slist_append(headersList, "\(header.name): \(header.value)")
+            }
+            
+            curlHelperSetOptList(curlHandle, CURLOPT_HTTPHEADER, headersList)
+            
+            // TODO: improve response handler
+            let ret = curl_easy_perform(curlHandle)
+            
+            print("ret = \(ret)")
+            
+            if ret == CURLE_OK {
+//                print(String(utf8String: error!)!)
+            } else {
+                let error = curl_easy_strerror(ret)
+                print(String(utf8String: error!)!)
+            }
 //            let response = try httpClient.post(path: "/3/device/\(message.deviceToken)", headers: headers)
 //            print (response.json)
             return Result.success(apnsId: message.messageId, serviceStatus: .success)
-        } catch {
-            return Result.networkError(apnsId: message.messageId, error: error)
-        }
+//        } catch {
+//            return Result.networkError(apnsId: message.messageId, error: error)
+//        }
     }
    
     private func requestHeaders(for message: ApplePushMessage) -> [Header] {
@@ -64,11 +108,7 @@ public class VaporAPNS {
         for (key, value) in headers {
             headerss.append((key, value))
         }
-        print (headerss)
-        print (headerss)
-        print (headerss)
-        print (headerss)
-
+       
         return headerss
     
     }
