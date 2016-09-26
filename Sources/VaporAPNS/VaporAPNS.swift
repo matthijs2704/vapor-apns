@@ -90,7 +90,7 @@ public class VaporAPNS {
         var headers: [String : String] = [
             "authorization": "bearer \(apnsAuthKey)",
             "apns-id": message.messageId,
-            "apns-expiration": "\(message.expirationDate?.timeIntervalSince1970.rounded() ?? 0)",
+            "apns-expiration": "\(Int(message.expirationDate?.timeIntervalSince1970.rounded() ?? 0))",
             "apns-priority": "\(message.priority.rawValue)",
             "apns-topic": message.topic
         ]
