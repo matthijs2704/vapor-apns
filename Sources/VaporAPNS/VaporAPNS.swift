@@ -19,6 +19,7 @@ public class VaporAPNS {
         self.curlHandle = curl_easy_init()
         
         curlHelperSetOptInt(curlHandle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2_0)
+        curlHelperSetOptBool(curlHandle, CURLOPT_VERBOSE, 1)
     }
     
     private func connect() throws {
@@ -36,8 +37,9 @@ public class VaporAPNS {
             let headers = self.requestHeaders(for: message)
             var headersList: UnsafeMutablePointer<curl_slist>?
             
-            // set url for push according env
-            curlHelperSetOptString(curlHandle, CURLOPT_URL, ("\(self.hostURL(development: message.sandbox))/3/device/\(message.deviceToken)"))
+            // set url for push
+            let url = ("\(self.hostURL(development: message.sandbox))/3/device/\(message.deviceToken)")
+            curlHelperSetOptString(curlHandle, CURLOPT_URL, url)
             
             // set port to 443 (we can omit it)
             curlHelperSetOptInt(curlHandle, CURLOPT_PORT, 443)
