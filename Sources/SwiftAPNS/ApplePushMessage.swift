@@ -11,8 +11,14 @@ import JSON
 
 /// Apple Push Notification Message
 public struct ApplePushMessage: NodeRepresentable {
-    /// Message Id
-    public let messageId:String = UUID().uuidString
+    /// Called when there was a response from the server
+    public typealias ResponseCallback = (Result) -> Void
+    
+    /// Called when there was an error
+    public typealias ErrorCallback = (Error) -> Void
+    
+    /// Message ID
+    public let messageId: String = UUID().uuidString
     
     /// Application BundleID
     public let topic: String
@@ -21,7 +27,7 @@ public struct ApplePushMessage: NodeRepresentable {
 
     public let threadIdentifier: String?
 
-    public let expirationDate: NSDate?
+    public let expirationDate: Date?
     
     /// APNS Priority
     public let priority: Priority
@@ -36,7 +42,7 @@ public struct ApplePushMessage: NodeRepresentable {
     }
     
     /// APNS Payload aps {...}
-    public let payload:Dictionary<String,Any>
+    public let payload: [String: Any]
     
     /// Device Token without <> and whitespaces
     public let deviceToken:String
@@ -45,12 +51,12 @@ public struct ApplePushMessage: NodeRepresentable {
     public let sandbox:Bool
     
     /// Response Clousure
-    public var responseBlock:((VaporAPNS.Result) -> ())?
+    public var responseCallback: ResponseCallback?
     
     /// Network error Clousure
-    public var networkError:((Error?)->())?
+    public var networkError: ErrorCallback?
     
-    public init(topic:String, priority:Priority, expirationDate: NSDate? = nil, payload:Dictionary<String,Any>, deviceToken:String, sandbox:Bool = true, collapseIdentifier: String? = nil, threadIdentifier: String? = nil) {
+    public init(topic: String, priority: Priority, expirationDate: Date? = nil, payload: [String: Any], deviceToken:String, sandbox:Bool = true, collapseIdentifier: String? = nil, threadIdentifier: String? = nil) {
         self.topic = topic
         self.priority = priority
         self.expirationDate = expirationDate
@@ -62,8 +68,6 @@ public struct ApplePushMessage: NodeRepresentable {
     }
     
     public func makeNode(context: Context) throws -> Node {
-        return try Node(node: [
-        
-        ])
+        return EmptyNode
     }
 }

@@ -9,7 +9,7 @@
 import XCTest
 @testable import VaporAPNS
 
-class VaporAPNSTests: XCTestCase {
+class VaporAPNSTests: XCTestCase { // TODO: Set this up so others can test this 😉
     
     let vaporAPNS: VaporAPNS! = nil
     

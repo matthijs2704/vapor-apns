@@ -5,29 +5,25 @@ import SwiftString
 import JSON
 import Vapor
 import TLS
+import hpack
 
 public class VaporAPNS {
-    private var httpClient: Client<TCPClientStream, Serializer<Request>, Parser<Response>>!
-    private var options: Options!
-    fileprivate var apnsAuthKey: String!
-    var sock: TLS.Socket!
+    private var options: Options
+    fileprivate var apnsAuthKey: String
+    
+    private var httpClient: Client<TCPClientStream, Serializer<Request>, Parser<Response>>?
+    private var sock: TLS.Socket?
     
     public init?(authKeyPath: String, options: Options? = nil) throws {
-        guard let tokenStr = tokenStringFor(authKeyPath: authKeyPath) else {
-            print ("VaporAPNS -- AuthKey file invalid")
-            return nil
-        }
-        self.apnsAuthKey = tokenStr
-        
+        self.apnsAuthKey = try authKeyPath.tokenString()
         self.options = options ?? Options()
-        
         try connect()
     }
     
     private func connect() throws {
 //        httpClient = try Client<TCPClientStream, Serializer<Request>, Parser<Response>>.init(scheme: "https", host: self.hostURL(development: self.options.development), port: self.options.port.rawValue, securityLayer: .tls(nil))
         sock = try TLS.Socket(mode: .client, hostname: self.hostURL(development: self.options.development), port: UInt16(self.options.port.rawValue))
-        try sock.connect(servername: self.hostURL(development: self.options.development))
+        try sock?.connect(servername: self.hostURL(development: self.options.development))
 //        let t = try sock.receive()
 //        print (t)
     }
@@ -36,8 +32,8 @@ public class VaporAPNS {
         do {
             let headers = self.requestHeaders(for: message)
             let headerBytes = Encoder().encode(headers)
-            try sock.send(headerBytes)
-            let line = try sock.receiveLine()
+            try sock?.send(headerBytes)
+            let line = try sock?.receiveLine()
             print (line)
 //            let response = try httpClient.post(path: "/3/device/\(message.deviceToken)", headers: headers)
 //            print (response.json)
@@ -85,25 +81,5 @@ extension VaporAPNS {
         } else {
             return "api.push.apple.com" //   /3/device/"
         }
-    }
-    
-    fileprivate func tokenStringFor(authKeyPath: String) -> String? {
-        guard let fileData = NSData(contentsOfFile: authKeyPath) as? Data else {
-            return nil
-        }
-        
-        guard let fileString = String(data: fileData, encoding: .utf8) else {
-            return nil
-        }
-        
-        guard let tokenString = fileString.collapseWhitespace().between("-----BEGIN PRIVATE KEY-----", "-----END PRIVATE KEY-----")?.trimmed() else {
-            return nil
-        }
-        
-        guard tokenString.characters.count == 200 else {
-            return nil
-        }
-        
-        return tokenString
     }
 }
