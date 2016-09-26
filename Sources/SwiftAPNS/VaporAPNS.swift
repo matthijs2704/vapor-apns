@@ -5,23 +5,20 @@ import SwiftString
 import JSON
 import Vapor
 import CCurl
+import hpack
 
 public class VaporAPNS {
-    private var httpClient: Client<TCPClientStream, Serializer<Request>, Parser<Response>>!
-    private var options: Options!
-    fileprivate var apnsAuthKey: String!
-    private var curlHandle: UnsafeMutableRawPointer!
-
-    public init?(authKeyPath: String, options: Options? = nil) throws {
+    private var options: Options
+    fileprivate var apnsAuthKey: String
+    
+    private var httpClient: Client<TCPClientStream, Serializer<Request>, Parser<Response>>?
+    private var curlHandle: UnsafeMutableRawPointer
+    
+    public init(authKeyPath: String, options: Options? = nil) throws {
         self.options = options ?? Options()
+        self.apnsAuthKey = try authKeyPath.tokenString()
+        self.curlHandle = curl_easy_init()
         
-        guard let tokenStr = tokenStringFor(authKeyPath: authKeyPath) else {
-            print ("VaporAPNS -- AuthKey file invalid")
-            return nil
-        }
-        self.apnsAuthKey = tokenStr
-        
-        curlHandle = curl_easy_init()
         curlHelperSetOptInt(curlHandle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2_0)
     }
     
@@ -124,25 +121,5 @@ extension VaporAPNS {
         } else {
             return "api.push.apple.com" //   /3/device/"
         }
-    }
-    
-    fileprivate func tokenStringFor(authKeyPath: String) -> String? {
-        guard let fileData = NSData(contentsOfFile: authKeyPath) as? Data else {
-            return nil
-        }
-        
-        guard let fileString = String(data: fileData, encoding: .utf8) else {
-            return nil
-        }
-        
-        guard let tokenString = fileString.collapseWhitespace().between("-----BEGIN PRIVATE KEY-----", "-----END PRIVATE KEY-----")?.trimmed() else {
-            return nil
-        }
-        
-        guard tokenString.characters.count == 200 else {
-            return nil
-        }
-        
-        return tokenString
     }
 }
