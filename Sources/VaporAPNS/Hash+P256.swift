@@ -165,6 +165,35 @@ class P256 {
         let publicKey = self.publicKey(fromECPoint: pub, compressed: true)
         print("Public Key: \(publicKey.hexString)")
 
+        EVP_PKEY_set1_EC_KEY(evp_key, key)
+        
+        
+        
+        
+        
+        
+        
+        let evpMDCTX = EVP_MD_CTX_create()
+        if(evpMDCTX == nil) {
+            print("EVP_MD_CTX_create failed");
+            fatalError()
+        }
+        
+        let  md = EVP_sha256()  //NID_md5
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 //        /* release resources */
 //        
         EC_POINT_free(pub);
