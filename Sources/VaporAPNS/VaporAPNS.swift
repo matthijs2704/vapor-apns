@@ -54,6 +54,7 @@ public class VaporAPNS {
         print(str)
         
         curlHelperSetOptString(curlHandle, CURLOPT_POSTFIELDS, str)
+        curlHelperSetOptInt(curlHandle, CURLOPT_POSTFIELDSIZE, str.length)
 
         
         // Tell CURL to add headers
@@ -62,14 +63,12 @@ public class VaporAPNS {
         //Headers
         let headers = self.requestHeaders(for: message)
         var curlHeaders: UnsafeMutablePointer<curl_slist>?
-        curlHeaders = curl_slist_append(curlHeaders, "Accept: application/json")
-        curlHeaders = curl_slist_append(curlHeaders, "Content-Type: application/json")
+        curlHeaders = curl_slist_append(curlHeaders, "User-Agent: curl/7.50.3")
         for header in headers {
             curlHeaders = curl_slist_append(curlHeaders, "\(header.key): \(header.value)")
         }
-        curl_slist_append(curlHeaders, "Content-Length: \(str.count)")
-        curl_slist_append(curlHeaders, "User-Agent: curl/7.50.3")
-
+        curlHeaders = curl_slist_append(curlHeaders, "Accept: application/json")
+        curlHeaders = curl_slist_append(curlHeaders, "Content-Type: application/json");
         curlHelperSetOptList(curlHandle, CURLOPT_HTTPHEADER, curlHeaders)
         
         // Get response
@@ -138,9 +137,9 @@ public class VaporAPNS {
     
     private func requestHeaders(for message: ApplePushMessage) -> [String: String] {
         var headers: [String : String] = [
-//            "apns-id": message.messageId,
-//            "apns-expiration": "\(Int(message.expirationDate?.timeIntervalSince1970.rounded() ?? 0))",
-//            "apns-priority": "\(message.priority.rawValue)",
+            "apns-id": message.messageId,
+            "apns-expiration": "\(Int(message.expirationDate?.timeIntervalSince1970.rounded() ?? 0))",
+            "apns-priority": "\(message.priority.rawValue)",
             "apns-topic": message.topic
         ]
         
