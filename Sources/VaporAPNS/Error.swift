@@ -32,6 +32,60 @@ public enum APNSError: CustomStringConvertible {
     case internalServerError
     case serviceUnavailable
     case missingTopic
+    case unknownError(error: String)
+    
+    init(errorReason: String) {
+        switch errorReason {
+        case "PayloadEmpty":
+            self = .payloadEmpty
+        case "PayloadTooLarge":
+            self = .payloadTooLarge
+        case "BadTopic":
+            self = .badTopic
+        case "TopicDisallowed":
+            self = .topicDisallowed
+        case "BadMessageId":
+            self = .badMessageId
+        case "BadExpirationDate":
+            self = .badExpirationDate
+        case "BadPriority":
+            self = .badPriority
+        case "MissingDeviceToken":
+            self = .missingDeviceToken
+        case "BadDeviceToken":
+            self = .badDeviceToken
+        case "DeviceTokenNotForTopic":
+            self = .deviceTokenNotForTopic
+        case "Unregistered":
+            self = .unregistered
+        case "DuplicateHeaders":
+            self = .duplicateHeaders
+        case "BadCertificateEnvironment":
+            self = .badCertificateEnvironment
+        case "BadCertificate":
+            self = .badCertificate
+        case "Forbidden":
+            self = .forbidden
+        case "BadPath":
+            self = .badPath
+        case "MethodNotAllowed":
+            self = .methodNotAllowed
+        case "TooManyRequests":
+            self = .tooManyRequests
+        case "IdleTimeout":
+            self = .idleTimeout
+        case "Shutdown":
+            self = .shutdown
+        case "InternalServerError":
+            self = .internalServerError
+        case "ServiceUnavailable":
+            self = .serviceUnavailable
+        case "MissingTopic":
+            self = .missingTopic
+        default:
+            self = .unknownError(error: errorReason)
+        }
+    }
     
     public var description: String {
         switch self {
@@ -58,6 +112,7 @@ public enum APNSError: CustomStringConvertible {
         case .internalServerError: return "An internal server error occurred."
         case .serviceUnavailable: return "The service is unavailable."
         case .missingTopic: return "The apns-topic header of the request was not specified and was required. The apns-topic header is mandatory when the client is connected using a certificate that supports multiple topics."
+        case .unknownError(let error): return "This error has not been mapped yet in APNSError: \(error)"
         }
     }
 }
