@@ -18,13 +18,14 @@ public class VaporAPNS {
         self.options = options ?? Options()
         self.curlHandle = curl_easy_init()
         
+        curlHelperSetOptBool(curlHandle, CURLOPT_VERBOSE, 1)
+
         curlHelperSetOptString(curlHandle, CURLOPT_SSLCERT, certPath)
         curlHelperSetOptString(curlHandle, CURLOPT_SSLCERTTYPE, "PEM")
         curlHelperSetOptString(curlHandle, CURLOPT_SSLKEY, keyPath)
         curlHelperSetOptString(curlHandle, CURLOPT_SSLKEYTYPE, "PEM")
         
         curlHelperSetOptInt(curlHandle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2_0)
-        curlHelperSetOptBool(curlHandle, CURLOPT_VERBOSE, 1)
     }
     
     public func send(applePushMessage message: ApplePushMessage) -> Result {
@@ -66,7 +67,7 @@ public class VaporAPNS {
         //Headers
         let headers = self.requestHeaders(for: message)
         var curlHeaders: UnsafeMutablePointer<curl_slist>?
-        curlHeaders = curl_slist_append(curlHeaders, "User-Agent: curl/7.50.3")
+        curlHeaders = curl_slist_append(curlHeaders, "User-Agent: VaporAPNS/0.1.0")
         for header in headers {
             let headerStr = "\(header.key): \(header.value)"
             let headerString = toNullTerminatedUtf8String(headerStr)
