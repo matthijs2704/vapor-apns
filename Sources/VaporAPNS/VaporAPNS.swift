@@ -44,17 +44,9 @@ public class VaporAPNS {
         
         // setup payload
         // TODO: Message payload
-        let json = try! JSON(node: [
-            "aps": [
-                "alert": "hi",
-                "sound":"default"
-            ]
-            ])
         
-//        let str = try! String(bytes: try! json.makeBytes())
-//        print(str)
-        var postFieldsString = toNullTerminatedUtf8String(try! json.makeBytes())!
-//
+        var postFieldsString = toNullTerminatedUtf8String(try! message.payload.makeJSON().serialize(prettyPrint: false))!
+
         postFieldsString.withUnsafeMutableBytes() { (t: UnsafeMutablePointer<Int8>) -> Void in
             curlHelperSetOptString(curlHandle, CURLOPT_POSTFIELDS, t)
         }
@@ -68,14 +60,7 @@ public class VaporAPNS {
         var curlHeaders: UnsafeMutablePointer<curl_slist>?
         curlHeaders = curl_slist_append(curlHeaders, "User-Agent: VaporAPNS/0.1.0")
         for header in headers {
-            let headerStr = "\(header.key): \(header.value)"
-//            let headerString = toNullTerminatedUtf8String(try! headerStr.makeBytes())
-//            if  var headerString = headerString  {
-//                headerString.withUnsafeMutableBytes() { (t: UnsafeMutablePointer<Int8>) -> Void in
-                    curlHeaders = curl_slist_append(curlHeaders, headerStr)
-//                }
-
-//            }
+            curlHeaders = curl_slist_append(curlHeaders, "\(header.key): \(header.value)")
         }
         curlHeaders = curl_slist_append(curlHeaders, "Accept: application/json")
         curlHeaders = curl_slist_append(curlHeaders, "Content-Type: application/json");
@@ -97,9 +82,7 @@ public class VaporAPNS {
         }
         
         let ret = curl_easy_perform(curlHandle)
-        
-        //        print("ret = \(ret)")
-        
+                
         if ret == CURLE_OK {
             // Create string from Data
             let str = String.init(data: writeStorage.data, encoding: .utf8)!
