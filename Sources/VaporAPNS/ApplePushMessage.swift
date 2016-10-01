@@ -41,8 +41,8 @@ public struct ApplePushMessage: NodeRepresentable {
         case immediately = 10
     }
     
-    /// APNS Payload aps {...}
-    public let payload: [String: Any]
+    /// APNS Payload
+    public let payload: Payload
     
     /// Device Token without <> and whitespaces
     public let deviceToken:String
@@ -56,7 +56,7 @@ public struct ApplePushMessage: NodeRepresentable {
     /// Network error Clousure
     public var networkError: ErrorCallback?
     
-    public init(topic: String, priority: Priority, expirationDate: Date? = nil, payload: [String: Any], deviceToken:String, sandbox:Bool = true, collapseIdentifier: String? = nil, threadIdentifier: String? = nil) {
+    public init(topic: String, priority: Priority, expirationDate: Date? = nil, payload: Payload, deviceToken:String, sandbox:Bool = true, collapseIdentifier: String? = nil, threadIdentifier: String? = nil) {
         self.topic = topic
         self.priority = priority
         self.expirationDate = expirationDate
