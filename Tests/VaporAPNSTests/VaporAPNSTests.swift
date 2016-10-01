@@ -18,19 +18,16 @@ class VaporAPNSTests: XCTestCase { // TODO: Set this up so others can test this 
     }
     
     func testInitializer() throws {
-        let wrongVaporAPNSInstance = try VaporAPNS(authKeyPath: "/Users/matthijs/Downloads/APNSAuthKey_T36248L7C8.p9")
-        XCTAssertNil(wrongVaporAPNSInstance)
-        
-        let correctVaporAPNSInstance = try VaporAPNS(authKeyPath: "/Users/matthijs/Downloads/APNSAuthKey_T36248L7C8.p8")
-        XCTAssertNotNil(correctVaporAPNSInstance)
     }
     
     func testSendPush() throws {
-        let correctVaporAPNSInstance = try VaporAPNS(authKeyPath: "/Users/matthijs/Downloads/APNSAuthKey_T36248L7C8.p8")
+        let correctVaporAPNSInstance = try VaporAPNS(certPath: "/Users/matthijs/Downloads/newfile.crt.pem", keyPath: "/Users/matthijs/Downloads/newfile.key.pem")
         
-        let pushMessage = ApplePushMessage(topic: "nl.logicbit.ReviusSchoolkrant", priority: .immediately, payload: Dictionary(), deviceToken: "43e798c31a282d129a34d84472bbdd7632562ff0732b58a85a27c5d9fdf59b69", sandbox: true)
+        let pl = Payload(title: "Hello", body: "from here! :D")
+        let pushMessage = ApplePushMessage(topic: "nl.logicbit.ReviusSchoolkrant", priority: .immediately, payload: pl, deviceToken: "488681b8e30e6722012aeb88f485c823b9be15c42e6cc8db1550a8f1abb590d7", sandbox: true)
         
-        let t = correctVaporAPNSInstance?.send(applePushMessage: pushMessage)
+        let t = correctVaporAPNSInstance.send(applePushMessage: pushMessage)
+//        let t2 = correctVaporAPNSInstance.send(applePushMessage: pushMessage)
         print (t)
     }
 }
