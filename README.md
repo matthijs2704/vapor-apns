@@ -85,7 +85,15 @@ Priority can either be `.energyEfficient` or `.immediately`. What does that mean
 `deviceToken` is the notification registration token of the device you want to send the push to.
 `sandbox` determines to what APNS server to send the push to. Pass `true` for development and `false` for production.
 
+Now you can send the notification using:
+```swift
+let result = vaporAPNS(applePushMessage: pushMessage)
+```
+
+You can use `result` to handle an error or a success. (Also see the Result enum)
+
 Done!
+
 ## ⭐ Contributing
 
 Be welcome to contribute to this project! :)
