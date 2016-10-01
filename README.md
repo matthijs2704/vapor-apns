@@ -87,7 +87,7 @@ Priority can either be `.energyEfficient` or `.immediately`. What does that mean
 
 Now you can send the notification using:
 ```swift
-let result = vaporAPNS(applePushMessage: pushMessage)
+let result = vaporAPNS.send(applePushMessage: pushMessage)
 ```
 
 You can use `result` to handle an error or a success. (Also see the Result enum)
