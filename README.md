@@ -75,6 +75,17 @@ payload.bodyLocArgs = [ "Jenna", "Frank" ]
 ```
 The possibilities are endless!
 
+
+After we've created the payload it's time to actually send the push message. To do so, we have to create an ApplePushMessage object, by doing:
+```swift
+let pushMessage = ApplePushMessage(topic: "nl.logicbit.TestApp", priority: .immediately, payload: payload, deviceToken: "488681b8e30e6722012aeb88f485c823b9be15c42e6cc8db1550a8f1abb590d7", sandbox: true)
+```
+`topic` being the build identifier of your app. 
+Priority can either be `.energyEfficient` or `.immediately`. What does that mean? In short, immediately will `.immediately` deliver the push notification and `.energyEfficient` will take power considerations for the device into account. Use `.immediately` for normal message push notifications and `.energyEfficient` for content-available pushes.
+`deviceToken` is the notification registration token of the device you want to send the push to.
+`sandbox` determines to what APNS server to send the push to. Pass `true` for development and `false` for production.
+
+Done!
 ## ⭐ Contributing
 
 Be welcome to contribute to this project! :)
