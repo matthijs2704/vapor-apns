@@ -9,7 +9,7 @@
 import Foundation
 import JSON
 
-class Payload: JSONRepresentable {
+public class Payload: JSONRepresentable {
     /// The number to display as the badge of the app icon.
     var badge: Int?
     
@@ -40,6 +40,7 @@ class Payload: JSONRepresentable {
     /// The name of a sound file in the app bundle or in the Library/Sounds folder of the app’s data container. The sound in this file is played as an alert. If the sound file doesn’t exist or default is specified as the value, the default alert sound is played. 
     var sound: String?
     
+    /// Silent push notification. This automatically ignores any other push message keys (title, body, ect.) and only the extra key-value pairs are added to the final payload
     var contentAvailable: Bool = false
     
     /// When displaying notifications, the system visually groups notifications with the same thread identifier together.
@@ -48,9 +49,7 @@ class Payload: JSONRepresentable {
     // Any extra key-value pairs to add to the JSON
     var extra: [String: NodeRepresentable] = [:]
     
-    
-
-    func makeJSON() throws -> JSON {
+    public func makeJSON() throws -> JSON {
         var payloadData: [String: NodeRepresentable] = [:]
         var apsPayloadData: [String: NodeRepresentable] = [:]
         
@@ -118,11 +117,28 @@ class Payload: JSONRepresentable {
 
 extension Payload {
     convenience init(message: String) {
+        self.init()
         self.body = message
     }
     
     convenience init(title: String, body: String) {
+        self.init()
         self.title = title
         self.body = body
     }
+    
+    convenience init(title: String, body: String, badge: Int) {
+        self.init()
+        self.title = title
+        self.body = body
+        self.badge = badge
+    }
+    
+    
+    /// A simple, already made, Content-Available payload
+    static var contentAvailable: Payload = {
+        let payload = Payload()
+        payload.contentAvailable = true
+        return payload
+    }()
 }
