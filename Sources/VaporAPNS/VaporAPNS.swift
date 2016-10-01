@@ -36,10 +36,10 @@ public class VaporAPNS {
         curlHelperSetOptInt(curlHandle, CURLOPT_PORT, 443)
         
         // Follow location
-        curlHelperSetOptBool(curlHandle, CURLOPT_FOLLOWLOCATION, 1)
+        curlHelperSetOptBool(curlHandle, CURLOPT_FOLLOWLOCATION, CURL_TRUE)
         
         // set POST request
-        curlHelperSetOptBool(curlHandle, CURLOPT_POST, 1)
+        curlHelperSetOptBool(curlHandle, CURLOPT_POST, CURL_TRUE)
         
         // setup payload
         // TODO: Message payload
@@ -52,20 +52,30 @@ public class VaporAPNS {
         
         let str = try! String(bytes: try! json.makeBytes())
         print(str)
+        var postFieldsString = toNullTerminatedUtf8String(str)!
         
-        curlHelperSetOptString(curlHandle, CURLOPT_POSTFIELDS, str)
-        curlHelperSetOptInt(curlHandle, CURLOPT_POSTFIELDSIZE, str.length)
+        postFieldsString.withUnsafeMutableBytes() { (t: UnsafeMutablePointer<Int8>) -> Void in
+            curlHelperSetOptString(curlHandle, CURLOPT_POSTFIELDS, t)
+        }
+        curlHelperSetOptInt(curlHandle, CURLOPT_POSTFIELDSIZE, postFieldsString.count)
 
         
         // Tell CURL to add headers
-        curlHelperSetOptBool(curlHandle, CURLOPT_HEADER, 1)
+        curlHelperSetOptBool(curlHandle, CURLOPT_HEADER, CURL_TRUE)
         
         //Headers
         let headers = self.requestHeaders(for: message)
         var curlHeaders: UnsafeMutablePointer<curl_slist>?
         curlHeaders = curl_slist_append(curlHeaders, "User-Agent: curl/7.50.3")
         for header in headers {
-            curlHeaders = curl_slist_append(curlHeaders, "\(header.key): \(header.value)")
+            let headerStr = "\(header.key): \(header.value)"
+            let headerString = toNullTerminatedUtf8String(headerStr)
+            if  var headerString = headerString  {
+                headerString.withUnsafeMutableBytes() { (t: UnsafeMutablePointer<Int8>) -> Void in
+                    curlHeaders = curl_slist_append(curlHeaders, t)
+                }
+
+            }
         }
         curlHeaders = curl_slist_append(curlHeaders, "Accept: application/json")
         curlHeaders = curl_slist_append(curlHeaders, "Content-Type: application/json");
@@ -132,6 +142,13 @@ public class VaporAPNS {
             // todo: Better unknown error handling?
             return Result.error(apnsId: message.messageId, error: APNSError.unknownError(error: errorString))
             
+        }
+    }
+    
+    public func toNullTerminatedUtf8String(_ str: String) -> Data? {
+        let cString = str.cString(using: String.Encoding.utf8)
+        return cString?.withUnsafeBufferPointer() { buffer -> Data? in
+            return buffer.baseAddress != nil ? Data(bytes: buffer.baseAddress!, count: buffer.count) : nil
         }
     }
     
