@@ -7,3 +7,13 @@
 //
 
 import Foundation
+import JSON
+
+extension JSON {
+    func toString() throws -> String {
+        let bytes = try self.serialize(prettyPrint: false)
+        let data = Data.init(bytes: bytes)
+        let plString = String(data: data, encoding: .utf8)
+        return plString!
+    }
+}
