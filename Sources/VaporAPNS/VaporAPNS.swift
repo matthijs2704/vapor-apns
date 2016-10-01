@@ -51,16 +51,15 @@ public class VaporAPNS {
             ]
             ])
         
-        let str = try! String(bytes: try! json.makeBytes())
-        print(str)
-        var postFieldsString = toNullTerminatedUtf8String(str)!
-        
+//        let str = try! String(bytes: try! json.makeBytes())
+//        print(str)
+        var postFieldsString = toNullTerminatedUtf8String(try! json.makeBytes())!
+//
         postFieldsString.withUnsafeMutableBytes() { (t: UnsafeMutablePointer<Int8>) -> Void in
             curlHelperSetOptString(curlHandle, CURLOPT_POSTFIELDS, t)
         }
         curlHelperSetOptInt(curlHandle, CURLOPT_POSTFIELDSIZE, postFieldsString.count)
 
-        
         // Tell CURL to add headers
         curlHelperSetOptBool(curlHandle, CURLOPT_HEADER, CURL_TRUE)
         
@@ -70,13 +69,13 @@ public class VaporAPNS {
         curlHeaders = curl_slist_append(curlHeaders, "User-Agent: VaporAPNS/0.1.0")
         for header in headers {
             let headerStr = "\(header.key): \(header.value)"
-            let headerString = toNullTerminatedUtf8String(headerStr)
-            if  var headerString = headerString  {
-                headerString.withUnsafeMutableBytes() { (t: UnsafeMutablePointer<Int8>) -> Void in
-                    curlHeaders = curl_slist_append(curlHeaders, t)
-                }
+//            let headerString = toNullTerminatedUtf8String(try! headerStr.makeBytes())
+//            if  var headerString = headerString  {
+//                headerString.withUnsafeMutableBytes() { (t: UnsafeMutablePointer<Int8>) -> Void in
+                    curlHeaders = curl_slist_append(curlHeaders, headerStr)
+//                }
 
-            }
+//            }
         }
         curlHeaders = curl_slist_append(curlHeaders, "Accept: application/json")
         curlHeaders = curl_slist_append(curlHeaders, "Content-Type: application/json");
@@ -146,9 +145,9 @@ public class VaporAPNS {
         }
     }
     
-    public func toNullTerminatedUtf8String(_ str: String) -> Data? {
-        let cString = str.cString(using: String.Encoding.utf8)
-        return cString?.withUnsafeBufferPointer() { buffer -> Data? in
+    public func toNullTerminatedUtf8String(_ str: Bytes) -> Data? {
+//        let cString = str.cString(using: String.Encoding.utf8)
+        return str.withUnsafeBufferPointer() { buffer -> Data? in
             return buffer.baseAddress != nil ? Data(bytes: buffer.baseAddress!, count: buffer.count) : nil
         }
     }
