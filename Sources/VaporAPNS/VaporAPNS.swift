@@ -98,7 +98,7 @@ public class VaporAPNS {
             
             if responseData != "" {
                 // Get JSON from loaded data string
-                let json = try! Jay.init(formatting: .minified).jsonFromData(responseData.toBytes())
+                let json = try! Jay.init(formatting: .minified).jsonFromData(try! responseData.makeBytes())
                 
                 if (json.dictionary?.keys.contains("reason"))! {
                     result = Result.error(apnsId: message.messageId, error: APNSError.init(errorReason: json.dictionary!["reason"]!.string!))
