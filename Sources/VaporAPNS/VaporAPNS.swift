@@ -1,17 +1,13 @@
-import HTTP
-import Transport
 import Foundation
 import SwiftString
 import JSON
-import Vapor
 import CCurl
-import Jay
 import JSON
+import Jay
 
 public class VaporAPNS {
     private var options: Options
     
-    private var httpClient: Client<TCPClientStream, Serializer<Request>, Parser<Response>>?
     private var curlHandle: UnsafeMutableRawPointer
     
     public init(certPath: String, keyPath: String, options: Options? = nil) throws {
@@ -128,7 +124,7 @@ public class VaporAPNS {
         }
     }
     
-    public func toNullTerminatedUtf8String(_ str: Bytes) -> Data? {
+    public func toNullTerminatedUtf8String(_ str: [UTF8.CodeUnit]) -> Data? {
 //        let cString = str.cString(using: String.Encoding.utf8)
         return str.withUnsafeBufferPointer() { buffer -> Data? in
             return buffer.baseAddress != nil ? Data(bytes: buffer.baseAddress!, count: buffer.count) : nil
