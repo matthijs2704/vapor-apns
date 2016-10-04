@@ -4,22 +4,26 @@ import JSON
 import CCurl
 import JSON
 import Jay
+import VaporJWT
 
 public class VaporAPNS {
     private var options: Options
     
     private var curlHandle: UnsafeMutableRawPointer
     
-    public init(certPath: String, keyPath: String, options: Options? = nil) throws {
-        self.options = options ?? Options()
+    public init(options: Options) throws {
+        self.options = options
+        
         self.curlHandle = curl_easy_init()
         
         curlHelperSetOptBool(curlHandle, CURLOPT_VERBOSE, 1)
 
-        curlHelperSetOptString(curlHandle, CURLOPT_SSLCERT, certPath)
-        curlHelperSetOptString(curlHandle, CURLOPT_SSLCERTTYPE, "PEM")
-        curlHelperSetOptString(curlHandle, CURLOPT_SSLKEY, keyPath)
-        curlHelperSetOptString(curlHandle, CURLOPT_SSLKEYTYPE, "PEM")
+        if self.options.usesCertificateAuthentication {
+            curlHelperSetOptString(curlHandle, CURLOPT_SSLCERT, options.certPath)
+            curlHelperSetOptString(curlHandle, CURLOPT_SSLCERTTYPE, "PEM")
+            curlHelperSetOptString(curlHandle, CURLOPT_SSLKEY, options.keyPath)
+            curlHelperSetOptString(curlHandle, CURLOPT_SSLKEYTYPE, "PEM")
+        }
         
         curlHelperSetOptInt(curlHandle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2_0)
     }
@@ -30,7 +34,7 @@ public class VaporAPNS {
         curlHelperSetOptString(curlHandle, CURLOPT_URL, url)
         
         // force set port to 443
-        curlHelperSetOptInt(curlHandle, CURLOPT_PORT, 443)
+        curlHelperSetOptInt(curlHandle, CURLOPT_PORT, options.port.rawValue)
         
         // Follow location
         curlHelperSetOptBool(curlHandle, CURLOPT_FOLLOWLOCATION, CURL_TRUE)
@@ -54,6 +58,24 @@ public class VaporAPNS {
         //Headers
         let headers = self.requestHeaders(for: message)
         var curlHeaders: UnsafeMutablePointer<curl_slist>?
+        if !options.usesCertificateAuthentication {
+            let currentTime = NSDate().timeIntervalSince1970*1000
+            let jsonPayload = try! JSON(node: [
+                "iss": options.teamId,
+                "iat": "\(Int(currentTime.rounded()))"
+                ])
+            print (jsonPayload)
+
+            let decodedKey = options.authenticationToken!
+            print (decodedKey)
+            let jwt = try! JWT(payload: jsonPayload, algorithm: .es(._256(decodedKey)), extraHeaders: ["kid": "ABC123DEFG"])
+//            print (try! jwt.tokenString())
+//            var headerString = toNullTerminatedUtf8String(try! .makeBytes())!
+//            
+//            headerString.withUnsafeMutableBytes() { (t: UnsafeMutablePointer<Int8>) -> Void in
+                curlHeaders = curl_slist_append(curlHeaders, "Authorization: bearer \"eyAia2lkIjogIjhZTDNHM1JSWDciIH0.eyAiaXNzIjogIkM4Nk5WOUpYM0QiLCAiaWF0IjogIjE0NTkxNDM1ODA2NTAiIH0.MEYCIQDzqyahmH1rz1s-LFNkylXEa2lZ_aOCX4daxxTZkVEGzwIhALvkClnx5m5eAT6Lxw7LZtEQcH6JENhJTMArwLf3sXwi\"")
+//            }
+        }
         curlHeaders = curl_slist_append(curlHeaders, "User-Agent: VaporAPNS/0.1.0")
         for header in headers {
             curlHeaders = curl_slist_append(curlHeaders, "\(header.key): \(header.value)")

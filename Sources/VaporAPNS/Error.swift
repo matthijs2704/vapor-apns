@@ -122,3 +122,20 @@ public enum TokenError: Error {
     case invalidTokenString
     case wrongTokenLength
 }
+
+public enum InitializeError: Error, CustomStringConvertible {
+    case noAuthentication
+    case noTopic
+    case certificateFileDoesNotExist
+    case keyFileDoesNotExist
+
+    public var description: String {
+        switch self {
+        case .noAuthentication: return "APNS Authentication is required. You can either use APNS Auth Key authentication (easiest to setup and maintain) or the old fashioned certificates way"
+        case .noTopic: return "No APNS topic provided. This is required."
+        case .certificateFileDoesNotExist: return "Certificate file could not be found on your disk. Double check if the file exists and if the path is correct"
+        case .keyFileDoesNotExist: return "Key file could not be found on your disk. Double check if the file exists and if the path is correct"
+        }
+    }
+
+}
