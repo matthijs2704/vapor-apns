@@ -21,16 +21,7 @@ brew reinstall curl --with-openssl --with-nghttp2
 brew link curl --force
 ```
 
-### 2- Prepare certificates
-
-Create your APNS certificates, then export as `P12` file without a password. Then proceed in this way in your shell:
-
-```shell
-openssl pkcs12 -in Certificates.p12 -out push.crt.pem -clcerts -nokeys
-openssl pkcs12 -in Certificates.p12 -out push.key.pem -nocerts -nodes
-```
-
-### 3- Add VaporAPNS to your project
+### 2- Add VaporAPNS to your project
 
 Add the following dependency to your `Package.swift` file:
 
@@ -90,6 +81,7 @@ payload.bodyLocArgs = [ "Jenna", "Frank" ]
 ```
 The possibilities are endless!
 
+### 🚀 Send it!
 
 After we've created the payload it's time to actually send the push message. To do so, we have to create an ApplePushMessage object, by doing:
 ```swift
