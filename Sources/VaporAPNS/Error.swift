@@ -32,6 +32,7 @@ public enum APNSError: CustomStringConvertible {
     case internalServerError
     case serviceUnavailable
     case missingTopic
+    case invalidSignature
     case unknownError(error: String)
     
     init(errorReason: String) {
@@ -112,6 +113,7 @@ public enum APNSError: CustomStringConvertible {
         case .internalServerError: return "An internal server error occurred."
         case .serviceUnavailable: return "The service is unavailable."
         case .missingTopic: return "The apns-topic header of the request was not specified and was required. The apns-topic header is mandatory when the client is connected using a certificate that supports multiple topics."
+        case .invalidSignature: return "The used signature may be wrong or something went wrong while signing. Double check the signing key and or try again."
         case .unknownError(let error): return "This error has not been mapped yet in APNSError: \(error)"
         }
     }

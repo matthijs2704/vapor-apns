@@ -64,7 +64,7 @@ open class VaporAPNS {
                 "iss": options.teamId,
                 "iat": currentTime
                 ])
-            print (jsonPayload)
+//            print (jsonPayload)
 
             let decodedKey = options.privateKey!
 
@@ -80,9 +80,12 @@ open class VaporAPNS {
             do {
                 let jwt2 = try JWT(token: tokenString, encoding: .base64URL)
                 let verified = try jwt2.verifySignature(key: publicKey)
-                if !verified { fatalError() }
+                if !verified {
+                    return .error(apnsId: message.messageId, error: .invalidSignature)
+                }
             } catch {
-                fatalError("\(error)")
+//                fatalError("\(error)")
+                print ("Couldn't verify token. This is a non-fatal error, we'll try to send the notification anyway.")
             }
             
             curlHeaders = curl_slist_append(curlHeaders, "Authorization: bearer \(tokenString)")
@@ -115,7 +118,6 @@ open class VaporAPNS {
         if ret == CURLE_OK {
             // Create string from Data
             let str = String.init(data: writeStorage.data, encoding: .utf8)!
-            print ("Raw string \(str)")
             
             // Split into two pieces by '\r\n\r\n' as the response has two newlines before the returned data. This causes us to have two pieces, the headers/crap and the server returned data
             let splittedString = str.components(separatedBy: "\r\n\r\n")
