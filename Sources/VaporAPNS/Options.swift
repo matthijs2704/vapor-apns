@@ -28,14 +28,18 @@ public struct Options: CustomStringConvertible, NodeInitializable {
     public var privateKey: String?
     public var publicKey: String?
 
+    public var debugLogging: Bool = false
+    
     public var usesCertificateAuthentication: Bool {
         return certPath != nil && keyPath != nil
     }
     
-    public init(topic: String, certPath: String, keyPath: String, port: Port = .p443) throws {
+    public init(topic: String, certPath: String, keyPath: String, port: Port = .p443, debugLogging: Bool = false) throws {
         self.topic = topic
         self.certPath = certPath
         self.keyPath = keyPath
+        
+        self.debugLogging = debugLogging
         
         let fileManager = FileManager.default
         guard fileManager.fileExists(atPath: certPath) else {
@@ -46,10 +50,12 @@ public struct Options: CustomStringConvertible, NodeInitializable {
         }
     }
     
-    public init(topic: String, teamId: String, keyId: String, keyPath: String, port: Port = .p443) throws {
+    public init(topic: String, teamId: String, keyId: String, keyPath: String, port: Port = .p443, debugLogging: Bool = false) throws {
         self.teamId = teamId
         self.topic = topic
         self.keyId = keyId
+        
+        self.debugLogging = debugLogging
         
         let fileManager = FileManager.default
         guard fileManager.fileExists(atPath: keyPath) else {

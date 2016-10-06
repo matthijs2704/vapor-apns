@@ -16,7 +16,7 @@ open class VaporAPNS {
         
         self.curlHandle = curl_easy_init()
         
-        curlHelperSetOptBool(curlHandle, CURLOPT_VERBOSE, 1)
+        curlHelperSetOptBool(curlHandle, CURLOPT_VERBOSE, options.debugLogging ? CURL_TRUE : CURL_FALSE)
 
         if self.options.usesCertificateAuthentication {
             curlHelperSetOptString(curlHandle, CURLOPT_SSLCERT, options.certPath)
