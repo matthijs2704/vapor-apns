@@ -6,7 +6,7 @@
 ![Vapor](https://img.shields.io/badge/Vapor-1.0-green.svg)
 [![Crates.io](https://img.shields.io/crates/l/rustc-serialize.svg?maxAge=2592000)]()
 
-VaporAPNS is a simple, yet elegant, Swift library that allows you to send Apple Push Notifications using HTTP/2 protocol in Linux & macOS.
+VaporAPNS is a simple, yet elegant, Swift library that allows you to send Apple Push Notifications using HTTP/2 protocol in Linux & macOS. It has support for the brand-new [Token Based Authentication](https://developer.apple.com/videos/play/wwdc2016/724/) but if you need it, the traditional certificate authentication method is ready for you to use as well. Choose whatever you like!
 
 ## 🔧 Installation
 
@@ -21,16 +21,7 @@ brew reinstall curl --with-openssl --with-nghttp2
 brew link curl --force
 ```
 
-### 2- Prepare certificates
-
-Create your APNS certificates, then export as `P12` file without a password. Then proceed in this way in your shell:
-
-```shell
-openssl pkcs12 -in Certificates.p12 -out push.crt.pem -clcerts -nokeys
-openssl pkcs12 -in Certificates.p12 -out push.key.pem -nocerts -nodes
-```
-
-### 3- Add VaporAPNS to your project
+### 2- Add VaporAPNS to your project
 
 Add the following dependency to your `Package.swift` file:
 
@@ -46,12 +37,27 @@ It's really easy to get started with the VaporAPNS library! First you need to im
 ```swift
 import VaporAPNS
 ```
-
+### 🔒 Authentication methods
 Then you need to get yourself an instance of the VaporAPNS class:
+There are two ways you can initiate VaporAPNS. You can either use the new authentication key APNS authentication method or the 'old'/traditional certificates method.
+#### 🔑 Authentication key authentication (preferred)
+This is the easiest to setup authentication method. Also the token never expires so you won't have to renew the private key (unlike the certificates which expire at a certain date).
 ```swift
-let vaporAPNS = try VaporAPNS(certPath: "/your/path/to/the/push.crt.pem", keyPath: "/your/path/to/the/push.key.pem")
+let options = try! Options(topic: "<your bundle identifier>", teamId: "<your team identifier>", keyId: "<your key id>", keyPath: "/path/to/your/APNSAuthKey.p8")
+let vaporAPNS = try VaporAPNS(options: options)
 ```
-
+#### 🎫 Certificate authentication
+If you decide to go with the more traditional authentication method, you need to convert your push certificate, using:
+```shell
+openssl pkcs12 -in Certificates.p12 -out push.crt.pem -clcerts -nokeys
+openssl pkcs12 -in Certificates.p12 -out push.key.pem -nocerts -nodes
+```
+After you have those two files you can go ahead and create a VaporAPNS instance:
+```swift
+let options = try! Options(topic: "<your bundle identifier>", certPath: "/path/to/your/certificate.crt.pem", keyPath: "/path/to/your/certificatekey.key.pem")
+let vaporAPNS = try VaporAPNS(options: options)
+```
+### 📦 Push notification payload
 After you have the VaporAPNS instance, we can go ahead and create an Payload:
 There are multiple quick ways to create a push notification payload. The most simple one only contains a body message:
 ```swift
@@ -75,14 +81,15 @@ payload.bodyLocArgs = [ "Jenna", "Frank" ]
 ```
 The possibilities are endless!
 
+### 🚀 Send it!
 
 After we've created the payload it's time to actually send the push message. To do so, we have to create an ApplePushMessage object, by doing:
 ```swift
 let pushMessage = ApplePushMessage(topic: "nl.logicbit.TestApp", priority: .immediately, payload: payload, deviceToken: "488681b8e30e6722012aeb88f485c823b9be15c42e6cc8db1550a8f1abb590d7", sandbox: true)
 ```
-`topic` being the build identifier of your app. 
-Priority can either be `.energyEfficient` or `.immediately`. What does that mean? In short, immediately will `.immediately` deliver the push notification and `.energyEfficient` will take power considerations for the device into account. Use `.immediately` for normal message push notifications and `.energyEfficient` for content-available pushes.
-`deviceToken` is the notification registration token of the device you want to send the push to.
+`topic` being the build identifier of your app. This is an *optional* parameter. If left out or `nil` it'll use the topic from Options you've provided in the initializer.  
+Priority can either be `.energyEfficient` or `.immediately`. What does that mean? In short, immediately will `.immediately` deliver the push notification and `.energyEfficient` will take power considerations for the device into account. Use `.immediately` for normal message push notifications and `.energyEfficient` for content-available pushes.  
+`deviceToken` is the notification registration token of the device you want to send the push to.  
 `sandbox` determines to what APNS server to send the push to. Pass `true` for development and `false` for production.
 
 Now you can send the notification using:

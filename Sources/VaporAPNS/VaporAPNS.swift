@@ -4,33 +4,37 @@ import JSON
 import CCurl
 import JSON
 import Jay
+import VaporJWT
 
-public class VaporAPNS {
-    private var options: Options
+open class VaporAPNS {
+    fileprivate var options: Options
     
-    private var curlHandle: UnsafeMutableRawPointer
+    fileprivate var curlHandle: UnsafeMutableRawPointer
     
-    public init(certPath: String, keyPath: String, options: Options? = nil) throws {
-        self.options = options ?? Options()
+    public init(options: Options) throws {
+        self.options = options
+        
         self.curlHandle = curl_easy_init()
         
-        curlHelperSetOptBool(curlHandle, CURLOPT_VERBOSE, 1)
+        curlHelperSetOptBool(curlHandle, CURLOPT_VERBOSE, options.debugLogging ? CURL_TRUE : CURL_FALSE)
 
-        curlHelperSetOptString(curlHandle, CURLOPT_SSLCERT, certPath)
-        curlHelperSetOptString(curlHandle, CURLOPT_SSLCERTTYPE, "PEM")
-        curlHelperSetOptString(curlHandle, CURLOPT_SSLKEY, keyPath)
-        curlHelperSetOptString(curlHandle, CURLOPT_SSLKEYTYPE, "PEM")
+        if self.options.usesCertificateAuthentication {
+            curlHelperSetOptString(curlHandle, CURLOPT_SSLCERT, options.certPath)
+            curlHelperSetOptString(curlHandle, CURLOPT_SSLCERTTYPE, "PEM")
+            curlHelperSetOptString(curlHandle, CURLOPT_SSLKEY, options.keyPath)
+            curlHelperSetOptString(curlHandle, CURLOPT_SSLKEYTYPE, "PEM")
+        }
         
         curlHelperSetOptInt(curlHandle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2_0)
     }
     
-    public func send(applePushMessage message: ApplePushMessage) -> Result {
+    open func send(applePushMessage message: ApplePushMessage) -> Result {
         // Set URL
-        let url = ("\(self.hostURL(development: message.sandbox))/3/device/\(message.deviceToken)")
+        let url = ("\(self.hostURL(message.sandbox))/3/device/\(message.deviceToken)")
         curlHelperSetOptString(curlHandle, CURLOPT_URL, url)
         
         // force set port to 443
-        curlHelperSetOptInt(curlHandle, CURLOPT_PORT, 443)
+        curlHelperSetOptInt(curlHandle, CURLOPT_PORT, options.port.rawValue)
         
         // Follow location
         curlHelperSetOptBool(curlHandle, CURLOPT_FOLLOWLOCATION, CURL_TRUE)
@@ -54,6 +58,38 @@ public class VaporAPNS {
         //Headers
         let headers = self.requestHeaders(for: message)
         var curlHeaders: UnsafeMutablePointer<curl_slist>?
+        if !options.usesCertificateAuthentication {
+            let currentTime = Date().timeIntervalSince1970
+            let jsonPayload = try! JSON(node: [
+                "iss": options.teamId,
+                "iat": currentTime
+                ])
+//            print (jsonPayload)
+
+            let decodedKey = options.privateKey!
+
+            let jwt = try! JWT(payload: jsonPayload,
+                               header: try! JSON(node: ["alg":"ES256","kid":options.keyId!,"typ":"JWT"]),
+                               algorithm: .es(._256(decodedKey)),
+                               encoding: .base64URL)
+
+            let tokenString = try! jwt.token()
+
+            let publicKey = options.publicKey!
+            
+            do {
+                let jwt2 = try JWT(token: tokenString, encoding: .base64URL)
+                let verified = try jwt2.verifySignature(key: publicKey)
+                if !verified {
+                    return .error(apnsId: message.messageId, error: .invalidSignature)
+                }
+            } catch {
+//                fatalError("\(error)")
+                print ("Couldn't verify token. This is a non-fatal error, we'll try to send the notification anyway.")
+            }
+            
+            curlHeaders = curl_slist_append(curlHeaders, "Authorization: bearer \(tokenString)")
+        }
         curlHeaders = curl_slist_append(curlHeaders, "User-Agent: VaporAPNS/0.1.0")
         for header in headers {
             curlHeaders = curl_slist_append(curlHeaders, "\(header.key): \(header.value)")
@@ -82,7 +118,6 @@ public class VaporAPNS {
         if ret == CURLE_OK {
             // Create string from Data
             let str = String.init(data: writeStorage.data, encoding: .utf8)!
-            print ("Raw string \(str)")
             
             // Split into two pieces by '\r\n\r\n' as the response has two newlines before the returned data. This causes us to have two pieces, the headers/crap and the server returned data
             let splittedString = str.components(separatedBy: "\r\n\r\n")
@@ -124,19 +159,19 @@ public class VaporAPNS {
         }
     }
     
-    public func toNullTerminatedUtf8String(_ str: [UTF8.CodeUnit]) -> Data? {
+    open func toNullTerminatedUtf8String(_ str: [UTF8.CodeUnit]) -> Data? {
 //        let cString = str.cString(using: String.Encoding.utf8)
         return str.withUnsafeBufferPointer() { buffer -> Data? in
             return buffer.baseAddress != nil ? Data(bytes: buffer.baseAddress!, count: buffer.count) : nil
         }
     }
     
-    private func requestHeaders(for message: ApplePushMessage) -> [String: String] {
+    fileprivate func requestHeaders(for message: ApplePushMessage) -> [String: String] {
         var headers: [String : String] = [
             "apns-id": message.messageId,
             "apns-expiration": "\(Int(message.expirationDate?.timeIntervalSince1970.rounded() ?? 0))",
             "apns-priority": "\(message.priority.rawValue)",
-            "apns-topic": message.topic
+            "apns-topic": message.topic ?? options.topic
         ]
         
         if let collapseId = message.collapseIdentifier {
@@ -151,13 +186,13 @@ public class VaporAPNS {
         
     }
     
-    private class WriteStorage {
+    fileprivate class WriteStorage {
         var data = Data()
     }
 }
 
 extension VaporAPNS {
-    fileprivate func hostURL(development: Bool) -> String {
+    fileprivate func hostURL(_ development: Bool) -> String {
         if development {
             return "https://api.development.push.apple.com" //   "
         } else {

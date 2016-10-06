@@ -20,8 +20,7 @@ public struct ApplePushMessage: NodeRepresentable {
     /// Message ID
     public let messageId: String = UUID().uuidString
     
-    /// Application BundleID
-    public let topic: String
+    public let topic: String?
     
     public let collapseIdentifier: String?
 
@@ -56,7 +55,7 @@ public struct ApplePushMessage: NodeRepresentable {
     /// Network error Clousure
     public var networkError: ErrorCallback?
     
-    public init(topic: String, priority: Priority, expirationDate: Date? = nil, payload: Payload, deviceToken:String, sandbox:Bool = true, collapseIdentifier: String? = nil, threadIdentifier: String? = nil) {
+    public init(topic: String? = nil, priority: Priority, expirationDate: Date? = nil, payload: Payload, deviceToken:String, sandbox:Bool = true, collapseIdentifier: String? = nil, threadIdentifier: String? = nil) {
         self.topic = topic
         self.priority = priority
         self.expirationDate = expirationDate
@@ -67,7 +66,7 @@ public struct ApplePushMessage: NodeRepresentable {
         self.threadIdentifier = threadIdentifier
     }
     
-    public func makeNode(context: Context) throws -> Node {
+    public func makeNode(context ntext: Context) throws -> Node {
         return EmptyNode
     }
 }

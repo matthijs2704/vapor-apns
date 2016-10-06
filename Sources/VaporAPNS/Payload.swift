@@ -9,7 +9,7 @@
 import Foundation
 import JSON
 
-public class Payload: JSONRepresentable {
+open class Payload: JSONRepresentable {
     /// The number to display as the badge of the app icon.
     var badge: Int?
     
@@ -49,7 +49,7 @@ public class Payload: JSONRepresentable {
     // Any extra key-value pairs to add to the JSON
     var extra: [String: NodeRepresentable] = [:]
     
-    public func makeJSON() throws -> JSON {
+    open func makeJSON() throws -> JSON {
         var payloadData: [String: NodeRepresentable] = [:]
         var apsPayloadData: [String: NodeRepresentable] = [:]
         

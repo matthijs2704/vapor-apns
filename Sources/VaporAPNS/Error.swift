@@ -32,6 +32,7 @@ public enum APNSError: CustomStringConvertible {
     case internalServerError
     case serviceUnavailable
     case missingTopic
+    case invalidSignature
     case unknownError(error: String)
     
     init(errorReason: String) {
@@ -112,6 +113,7 @@ public enum APNSError: CustomStringConvertible {
         case .internalServerError: return "An internal server error occurred."
         case .serviceUnavailable: return "The service is unavailable."
         case .missingTopic: return "The apns-topic header of the request was not specified and was required. The apns-topic header is mandatory when the client is connected using a certificate that supports multiple topics."
+        case .invalidSignature: return "The used signature may be wrong or something went wrong while signing. Double check the signing key and or try again."
         case .unknownError(let error): return "This error has not been mapped yet in APNSError: \(error)"
         }
     }
@@ -121,4 +123,21 @@ public enum TokenError: Error {
     case invalidAuthKey
     case invalidTokenString
     case wrongTokenLength
+}
+
+public enum InitializeError: Error, CustomStringConvertible {
+    case noAuthentication
+    case noTopic
+    case certificateFileDoesNotExist
+    case keyFileDoesNotExist
+
+    public var description: String {
+        switch self {
+        case .noAuthentication: return "APNS Authentication is required. You can either use APNS Auth Key authentication (easiest to setup and maintain) or the old fashioned certificates way"
+        case .noTopic: return "No APNS topic provided. This is required."
+        case .certificateFileDoesNotExist: return "Certificate file could not be found on your disk. Double check if the file exists and if the path is correct"
+        case .keyFileDoesNotExist: return "Key file could not be found on your disk. Double check if the file exists and if the path is correct"
+        }
+    }
+
 }

@@ -13,7 +13,7 @@ import XCTest
 class PayloadTests: XCTestCase { // TODO: Set this up so others can test this 😉
     
     override func setUp() {
-        print ("Hi")
+//        print ("Hi")
     }
     
     func testInitializer() throws {
