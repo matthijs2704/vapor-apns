@@ -28,10 +28,10 @@ extension String {
         let fileString = try String(contentsOf: authKeyUrl, encoding: .utf8)
         guard
             let privateKeyString =
-            fileString.collapseWhitespace().between(
+            fileString.collapseWhitespace().trimmingCharacters(in: .whitespaces).between(
                 "-----BEGIN PRIVATE KEY-----",
                 "-----END PRIVATE KEY-----"
-                )?.trimmed()
+                )?.trimmingCharacters(in: .whitespaces)
             else {
                 throw TokenError.invalidTokenString
         }
@@ -61,7 +61,7 @@ extension String {
                 publicBytes[i] = Byte(pub[i])
             }
             let publicData = Data(bytes: publicBytes)
-            print("public key: \(publicData.hexString)")
+//            print("public key: \(publicData.hexString)")
             publicKey = publicData.hexString
         } else {
             publicKey = ""
