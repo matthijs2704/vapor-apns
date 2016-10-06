@@ -19,44 +19,42 @@ class VaporAPNSTests: XCTestCase { // TODO: Set this up so others can test this 
     let vaporAPNS: VaporAPNS! = nil
     
     override func setUp() {
-        print ("Hi")
+//        print ("Hi")
     }
     
-    func testInitializer() throws {
-    }
-    
-    func testSendPush() throws {
-        let options = try! Options(topic: "nl.logicbit.ReviusSchoolkrant", teamId: "YQ3FQN6Z53", keyId: "4K8N6Q55G7", keyPath: "/Users/matthijs/Downloads/APNSAuthKey_4K8N6Q55G7_form.p8")
-//        let options = try! Options(topic: "nl.logicbit.ReviusSchoolkrant", certPath: "/Users/matthijs/Downloads/newfile.crt.pem", keyPath: "/Users/matthijs/Downloads/newfile.key.pem")
-        let correctVaporAPNSInstance = try! VaporAPNS(options: options)
-
-        let pl = Payload(title: "Hello", body: "from here! :D")
-        let pushMessage = ApplePushMessage(topic: "nl.logicbit.ReviusSchoolkrant", priority: .immediately, payload: pl, deviceToken: "488681b8e30e6722012aeb88f485c823b9be15c42e6cc8db1550a8f1abb590d7", sandbox: true)
+    func testLoadPrivateKey() throws {
+        if let filepath = Bundle.init(for: type(of: self)).path(forResource: "TestAPNSAuthKey", ofType: "p8") {
         
-        let t = correctVaporAPNSInstance.send(applePushMessage: pushMessage)
-//        let t2 = correctVaporAPNSInstance.send(applePushMessage: pushMessage)
-        print (t)
-    }
-    
-    func testLoadP8() {
-        var pKey = EVP_PKEY_new()
-        
-        let fp = fopen("/Users/matthijs/Downloads/APNSAuthKey_4K8N6Q55G7_form.p8", "r")
-        
-        PEM_read_PrivateKey(fp, &pKey, nil, nil)
-        
-        fclose(fp)
-        
-        let ecKey = EVP_PKEY_get1_EC_KEY(pKey)
-        
-        EC_KEY_set_conv_form(ecKey, POINT_CONVERSION_UNCOMPRESSED)
-        
-        let bn = EC_KEY_get0_private_key(ecKey!)
-        let thing = BN_bn2hex(bn)
-        
-        let privateKey = String.init(validatingUTF8: thing!)
-        
-        print ("00\(privateKey)")
-
+            let (privKey, pubKey) = try filepath.tokenString()
+            XCTAssertEqual(privKey, "ALEILVyGWnbBaSaIFDsh0yoZaK+Ej0po/55jG2FR6u6C")
+            XCTAssertEqual(pubKey, "BKqKwB6hpXp9SzWGt3YxnHgCEkcbS+JSrhoqkeqru/Nf62MeE958RIiKYsLFA/czdE7ThCt46azneU0IBnMCuQU=")
+        } else {
+            XCTFail("APNS Authentication key not found!")
         }
+    }
+    
+    func testEncoding() throws {
+        let currentTime = Date().timeIntervalSince1970
+        let jsonPayload = try JSON(node: [
+            "iss": "D86BEC0E8B",
+            "iat": currentTime
+            ])
+        
+        let jwt = try! JWT(payload: jsonPayload,
+                           header: try! JSON(node: ["alg":"ES256","kid":"E811E6AE22","typ":"JWT"]),
+                           algorithm: .es(._256("ALEILVyGWnbBaSaIFDsh0yoZaK+Ej0po/55jG2FR6u6C")),
+                           encoding: .base64URL)
+        
+        let tokenString = try! jwt.token()
+        
+        do {
+            let jwt2 = try JWT(token: tokenString, encoding: .base64URL)
+            let verified = try jwt2.verifySignature(key: "BKqKwB6hpXp9SzWGt3YxnHgCEkcbS+JSrhoqkeqru/Nf62MeE958RIiKYsLFA/czdE7ThCt46azneU0IBnMCuQU=")
+            XCTAssertTrue(verified)
+        } catch {
+            //                fatalError("\(error)")
+            XCTFail ("Couldn't verify token")
+        }
+
+    }
 }
