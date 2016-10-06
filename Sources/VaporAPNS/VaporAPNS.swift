@@ -69,7 +69,7 @@ open class VaporAPNS {
             let decodedKey = options.privateKey!
 
             let jwt = try! JWT(payload: jsonPayload,
-                               header: JSON(["alg":"ES256","kid":"4K8N6Q55G7","typ":"JWT"]),
+                               header: try! JSON(node: ["alg":"ES256","kid":options.keyId!,"typ":"JWT"]),
                                algorithm: .es(._256(decodedKey)),
                                encoding: .base64URL)
 
