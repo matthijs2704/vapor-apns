@@ -67,7 +67,7 @@ public struct ApplePushMessage: NodeRepresentable {
         self.threadIdentifier = threadIdentifier
     }
     
-    public func makeNode(context: Context) throws -> Node {
+    public func makeNode(context ntext: Context) throws -> Node {
         return EmptyNode
     }
 }

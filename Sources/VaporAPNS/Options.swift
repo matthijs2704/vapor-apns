@@ -25,8 +25,9 @@ public struct Options: CustomStringConvertible, NodeInitializable {
     // Authentication method: authentication key
     public var teamId: String?
     public var keyId: String?
-    public var authenticationToken: String?
-    
+    public var privateKey: String?
+    public var publicKey: String?
+
     public var usesCertificateAuthentication: Bool {
         return certPath != nil && keyPath != nil
     }
@@ -55,7 +56,9 @@ public struct Options: CustomStringConvertible, NodeInitializable {
             throw InitializeError.keyFileDoesNotExist
         }
         
-        self.authenticationToken = try keyPath.tokenString()
+        let (priv, pub) = try keyPath.tokenString()
+        self.privateKey = priv
+        self.publicKey = pub
     }
     
     public init(node: Node, in context: Context) throws {
@@ -82,7 +85,9 @@ public struct Options: CustomStringConvertible, NodeInitializable {
         if let privateKeyLocation = node["keyPath"]?.string, let keyId = node["keyId"]?.string {
             if hasAnyAuthentication { hasBothAuthentication = true }
             hasAnyAuthentication = true
-            self.authenticationToken = try privateKeyLocation.tokenString()
+            let (priv, pub) = try privateKeyLocation.tokenString()
+            self.privateKey = priv
+            self.publicKey = pub
             self.keyId = keyId
         }
         
@@ -105,6 +110,7 @@ public struct Options: CustomStringConvertible, NodeInitializable {
                 "\nCER - Certificate path: \(certPath)" +
                 "\nCER - Key path: \(keyPath)" +
                 "\nTOK - Key ID: \(keyId)" +
-                "\nTOK - Authentication token: \(authenticationToken)"
+                "\nTOK - Private key: \(privateKey)" +
+                "\nTOK - Public key: \(publicKey)"
     }
 }

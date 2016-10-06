@@ -6,10 +6,10 @@ import JSON
 import Jay
 import VaporJWT
 
-public class VaporAPNS {
-    private var options: Options
+open class VaporAPNS {
+    fileprivate var options: Options
     
-    private var curlHandle: UnsafeMutableRawPointer
+    fileprivate var curlHandle: UnsafeMutableRawPointer
     
     public init(options: Options) throws {
         self.options = options
@@ -28,9 +28,9 @@ public class VaporAPNS {
         curlHelperSetOptInt(curlHandle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2_0)
     }
     
-    public func send(applePushMessage message: ApplePushMessage) -> Result {
+    open func send(applePushMessage message: ApplePushMessage) -> Result {
         // Set URL
-        let url = ("\(self.hostURL(development: message.sandbox))/3/device/\(message.deviceToken)")
+        let url = ("\(self.hostURL(message.sandbox))/3/device/\(message.deviceToken)")
         curlHelperSetOptString(curlHandle, CURLOPT_URL, url)
         
         // force set port to 443
@@ -59,22 +59,33 @@ public class VaporAPNS {
         let headers = self.requestHeaders(for: message)
         var curlHeaders: UnsafeMutablePointer<curl_slist>?
         if !options.usesCertificateAuthentication {
-            let currentTime = NSDate().timeIntervalSince1970*1000
+            let currentTime = Date().timeIntervalSince1970
             let jsonPayload = try! JSON(node: [
                 "iss": options.teamId,
-                "iat": "\(Int(currentTime.rounded()))"
+                "iat": currentTime
                 ])
             print (jsonPayload)
 
-            let decodedKey = options.authenticationToken!
-            print (decodedKey)
-            let jwt = try! JWT(payload: jsonPayload, algorithm: .es(._256(decodedKey)), extraHeaders: ["kid": "ABC123DEFG"])
-//            print (try! jwt.tokenString())
-//            var headerString = toNullTerminatedUtf8String(try! .makeBytes())!
-//            
-//            headerString.withUnsafeMutableBytes() { (t: UnsafeMutablePointer<Int8>) -> Void in
-                curlHeaders = curl_slist_append(curlHeaders, "Authorization: bearer \"eyAia2lkIjogIjhZTDNHM1JSWDciIH0.eyAiaXNzIjogIkM4Nk5WOUpYM0QiLCAiaWF0IjogIjE0NTkxNDM1ODA2NTAiIH0.MEYCIQDzqyahmH1rz1s-LFNkylXEa2lZ_aOCX4daxxTZkVEGzwIhALvkClnx5m5eAT6Lxw7LZtEQcH6JENhJTMArwLf3sXwi\"")
-//            }
+            let decodedKey = options.privateKey!
+
+            let jwt = try! JWT(payload: jsonPayload,
+                               header: JSON(["alg":"ES256","kid":"4K8N6Q55G7","typ":"JWT"]),
+                               algorithm: .es(._256(decodedKey)),
+                               encoding: .base64URL)
+
+            let tokenString = try! jwt.token()
+
+            let publicKey = options.publicKey!
+            
+            do {
+                let jwt2 = try JWT(token: tokenString, encoding: .base64URL)
+                let verified = try jwt2.verifySignature(key: publicKey)
+                if !verified { fatalError() }
+            } catch {
+                fatalError("\(error)")
+            }
+            
+            curlHeaders = curl_slist_append(curlHeaders, "Authorization: bearer \(tokenString)")
         }
         curlHeaders = curl_slist_append(curlHeaders, "User-Agent: VaporAPNS/0.1.0")
         for header in headers {
@@ -146,14 +157,14 @@ public class VaporAPNS {
         }
     }
     
-    public func toNullTerminatedUtf8String(_ str: [UTF8.CodeUnit]) -> Data? {
+    open func toNullTerminatedUtf8String(_ str: [UTF8.CodeUnit]) -> Data? {
 //        let cString = str.cString(using: String.Encoding.utf8)
         return str.withUnsafeBufferPointer() { buffer -> Data? in
             return buffer.baseAddress != nil ? Data(bytes: buffer.baseAddress!, count: buffer.count) : nil
         }
     }
     
-    private func requestHeaders(for message: ApplePushMessage) -> [String: String] {
+    fileprivate func requestHeaders(for message: ApplePushMessage) -> [String: String] {
         var headers: [String : String] = [
             "apns-id": message.messageId,
             "apns-expiration": "\(Int(message.expirationDate?.timeIntervalSince1970.rounded() ?? 0))",
@@ -173,13 +184,13 @@ public class VaporAPNS {
         
     }
     
-    private class WriteStorage {
+    fileprivate class WriteStorage {
         var data = Data()
     }
 }
 
 extension VaporAPNS {
-    fileprivate func hostURL(development: Bool) -> String {
+    fileprivate func hostURL(_ development: Bool) -> String {
         if development {
             return "https://api.development.push.apple.com" //   "
         } else {
