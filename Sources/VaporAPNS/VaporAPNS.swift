@@ -171,7 +171,7 @@ open class VaporAPNS {
             "apns-id": message.messageId,
             "apns-expiration": "\(Int(message.expirationDate?.timeIntervalSince1970.rounded() ?? 0))",
             "apns-priority": "\(message.priority.rawValue)",
-            "apns-topic": message.topic
+            "apns-topic": message.topic ?? options.topic
         ]
         
         if let collapseId = message.collapseIdentifier {
