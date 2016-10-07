@@ -115,19 +115,19 @@ open class Payload: JSONRepresentable {
     }
 }
 
-extension Payload {
-    convenience init(message: String) {
+open extension Payload {
+    open convenience init(message: String) {
         self.init()
         self.body = message
     }
     
-    convenience init(title: String, body: String) {
+    open convenience init(title: String, body: String) {
         self.init()
         self.title = title
         self.body = body
     }
     
-    convenience init(title: String, body: String, badge: Int) {
+    open convenience init(title: String, body: String, badge: Int) {
         self.init()
         self.title = title
         self.body = body
@@ -136,7 +136,7 @@ extension Payload {
     
     
     /// A simple, already made, Content-Available payload
-    static var contentAvailable: Payload = {
+    open static var contentAvailable: Payload = {
         let payload = Payload()
         payload.contentAvailable = true
         return payload
