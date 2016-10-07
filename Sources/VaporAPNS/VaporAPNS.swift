@@ -90,7 +90,7 @@ open class VaporAPNS {
             
             curlHeaders = curl_slist_append(curlHeaders, "Authorization: bearer \(tokenString)")
         }
-        curlHeaders = curl_slist_append(curlHeaders, "User-Agent: VaporAPNS/0.1.0")
+        curlHeaders = curl_slist_append(curlHeaders, "User-Agent: VaporAPNS/1.0.1")
         for header in headers {
             curlHeaders = curl_slist_append(curlHeaders, "\(header.key): \(header.value)")
         }
