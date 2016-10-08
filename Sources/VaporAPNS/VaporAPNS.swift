@@ -105,7 +105,7 @@ open class VaporAPNS {
             let realsize = size * nMemb
             
             var bytes: [UInt8] = [UInt8](repeating: 0, count: realsize)
-            memcpy(&bytes, ptr, realsize)
+            memcpy(&bytes, ptr!, realsize)
             
             for byte in bytes {
                 storage?.pointee.data.append(byte)

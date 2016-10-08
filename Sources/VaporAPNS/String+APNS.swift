@@ -10,6 +10,10 @@ import Foundation
 import CLibreSSL
 import Core
 
+#if os(Linux)
+    typealias NSRegularExpression = RegularExpression
+#endif
+
 extension String {
     private func newECKey() throws -> OpaquePointer {
         guard let ecKey = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1) else {
