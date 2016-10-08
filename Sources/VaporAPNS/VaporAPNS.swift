@@ -59,7 +59,7 @@ open class VaporAPNS {
         let headers = self.requestHeaders(for: message)
         var curlHeaders: UnsafeMutablePointer<curl_slist>?
         if !options.usesCertificateAuthentication {
-            let currentTime = Date().timeIntervalSince1970
+            let currentTime = Int(Date().timeIntervalSince1970.rounded())
             let jsonPayload = try! JSON(node: [
                 "iss": options.teamId,
                 "iat": currentTime

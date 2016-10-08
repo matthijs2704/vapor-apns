@@ -48,7 +48,7 @@ class VaporAPNSTests: XCTestCase { // TODO: Set this up so others can test this 
     }
     
     func testEncoding() throws {
-        let currentTime = Date().timeIntervalSince1970
+        let currentTime = Int(Date().timeIntervalSince1970.rounded())
         let jsonPayload = try JSON(node: [
             "iss": "D86BEC0E8B",
             "iat": currentTime
