@@ -98,7 +98,8 @@ extension String {
             
             let regex = try! NSRegularExpression(pattern: "[0-9a-f]{1,2}", options: .caseInsensitive)
             regex.enumerateMatches(in: self, options: [], range: NSMakeRange(0, characters.count)) { match, flags, stop in
-                let byteString = (self as NSString).substring(with: match!.range)
+                let range = self.range(from: match!.range)
+                let byteString = self.substring(with: range!)
                 var num = UInt8(byteString, radix: 16)
                 data?.append(&num, length: 1)
             }
@@ -129,6 +130,18 @@ extension String {
         }
         
         return result
+    }
+}
+
+extension String {
+    func range(from nsRange: NSRange) -> Range<String.Index>? {
+        guard
+            let from16 = utf16.index(utf16.startIndex, offsetBy: nsRange.location, limitedBy: utf16.endIndex),
+            let to16 = utf16.index(from16, offsetBy: nsRange.length, limitedBy: utf16.endIndex),
+            let from = String.Index(from16, within: self),
+            let to = String.Index(to16, within: self)
+            else { return nil }
+        return from ..< to
     }
 }
 
