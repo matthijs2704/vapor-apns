@@ -67,4 +67,11 @@ class VaporAPNSTests: XCTestCase { // TODO: Set this up so others can test this 
         }
 
     }
+    
+    static var allTests : [(String, (VaporAPNSTests) -> () throws -> Void)] {
+        return [
+            ("testLoadPrivateKey", testLoadPrivateKey),
+            ("testEncoding", testEncoding),
+        ]
+    }
 }
