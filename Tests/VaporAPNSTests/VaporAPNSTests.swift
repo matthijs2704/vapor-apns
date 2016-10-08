@@ -24,9 +24,18 @@ class VaporAPNSTests: XCTestCase { // TODO: Set this up so others can test this 
     }
     
     func testLoadPrivateKey() throws {
-        if let filepath = Bundle.init(for: type(of: self)).path(forResource: "TestAPNSAuthKey", ofType: "p8") {
+        var filepath = ""
+        let fileManager = FileManager.default
         
-            let (privKey, pubKey) = try filepath.tokenString()
+        if let filepathe = Bundle.init(for: type(of: self)).path(forResource: "TestAPNSAuthKey", ofType: "p8") {
+            filepath = filepathe
+        }else {
+            filepath = fileManager.currentDirectoryPath.appending("/Tests/VaporAPNSTests/TestAPNSAuthKey.p8")
+        }
+        print (filepath)
+        
+        if fileManager.fileExists(atPath: filepath) {
+        let (privKey, pubKey) = try filepath.tokenString()
             XCTAssertEqual(privKey, "ALEILVyGWnbBaSaIFDsh0yoZaK+Ej0po/55jG2FR6u6C")
             XCTAssertEqual(pubKey, "BKqKwB6hpXp9SzWGt3YxnHgCEkcbS+JSrhoqkeqru/Nf62MeE958RIiKYsLFA/czdE7ThCt46azneU0IBnMCuQU=")
         } else {
