@@ -61,6 +61,7 @@ class PayloadTests: XCTestCase { // TODO: Set this up so others can test this ðŸ
     
     func testContentAvailableWithExtrasPush() throws {
         let expectedJSON = "{\"IntKey\":101,\"StringKey\":\"StringExtra1\",\"aps\":{\"content-available\":true}}"
+        let linuxExpectedJSON = "{\"aps\":{\"content-available\":true},\"IntKey\":101,\"StringKey\":\"StringExtra1\"}"
         
         let payload = Payload.contentAvailable
         payload.extra["StringKey"] = "StringExtra1"
@@ -68,7 +69,7 @@ class PayloadTests: XCTestCase { // TODO: Set this up so others can test this ðŸ
         let plJosn = try payload.makeJSON()
         let plString = try plJosn.toString()
         
-        XCTAssertEqual(plString, expectedJSON)
+        XCTAssertTrue(plString == expectedJSON || plString == linuxExpectedJSON)
     }
     
     static var allTests : [(String, (PayloadTests) -> () throws -> Void)] {
