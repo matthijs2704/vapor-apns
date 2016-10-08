@@ -27,11 +27,15 @@ class VaporAPNSTests: XCTestCase { // TODO: Set this up so others can test this 
         var filepath = ""
         let fileManager = FileManager.default
         
+        #if os(Linux)
+            filepath = fileManager.currentDirectoryPath.appending("/Tests/VaporAPNSTests/TestAPNSAuthKey.p8")
+        #else
         if let filepathe = Bundle.init(for: type(of: self)).path(forResource: "TestAPNSAuthKey", ofType: "p8") {
             filepath = filepathe
         }else {
             filepath = fileManager.currentDirectoryPath.appending("/Tests/VaporAPNSTests/TestAPNSAuthKey.p8")
         }
+        #endif
         print (filepath)
         
         if fileManager.fileExists(atPath: filepath) {
