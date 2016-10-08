@@ -11,6 +11,7 @@ import XCTest
 import VaporJWT
 import JSON
 
+import Foundation
 import CLibreSSL
 import Core
 
