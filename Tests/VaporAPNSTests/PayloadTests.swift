@@ -71,9 +71,9 @@ class PayloadTests: XCTestCase { // TODO: Set this up so others can test this ðŸ
         XCTAssertEqual(plString, expectedJSON)
     }
     
-    static var allTests : [(String, (VaporAPNSTests) -> () throws -> Void)] {
+    static var allTests : [(String, (PayloadTests) -> () throws -> Void)] {
         return [
-            ("testSimplePush", PayloadTestss),
+            ("testSimplePush", testSimplePush),
             ("testTitleBodyPush", testTitleBodyPush),
             ("testTitleBodyBadgePush", testTitleBodyBadgePush),
             ("testContentAvailablePush", testContentAvailablePush),
