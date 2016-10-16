@@ -39,6 +39,9 @@ open class Payload: JSONRepresentable {
     
     /// The name of a sound file in the app bundle or in the Library/Sounds folder of the app’s data container. The sound in this file is played as an alert. If the sound file doesn’t exist or default is specified as the value, the default alert sound is played. 
     public var sound: String?
+
+    /// a category that is used by iOS 10+ notifications
+    public var category: String?
     
     /// Silent push notification. This automatically ignores any other push message keys (title, body, ect.) and only the extra key-value pairs are added to the final payload
     public var contentAvailable: Bool = false
@@ -105,7 +108,11 @@ open class Payload: JSONRepresentable {
         if let sound = sound {
             apsPayloadData["sound"] = sound
         }
-        
+
+        if let category = category {
+            apsPayloadData["category"] = category
+        }
+
         }
         
         payloadData["aps"] = try apsPayloadData.makeNode()
