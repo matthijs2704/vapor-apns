@@ -59,27 +59,21 @@ open class VaporAPNS {
         let headers = self.requestHeaders(for: message)
         var curlHeaders: UnsafeMutablePointer<curl_slist>?
         if !options.usesCertificateAuthentication {
-            let currentTime = Int(Date().timeIntervalSince1970.rounded())
-            let jsonPayload = try! JSON(node: [
-                "iss": options.teamId,
-                "iat": currentTime
-                ])
-//            print (jsonPayload)
-
             let decodedKey = options.privateKey!
 
-            let jwt = try! JWT(payload: jsonPayload,
-                               header: try! JSON(node: ["alg":"ES256","kid":options.keyId!,"typ":"JWT"]),
-                               algorithm: .es(._256(decodedKey)),
-                               encoding: .base64URL)
+            let jwt = try! JWT(additionalHeaders: [KeyID(options.keyId!)],
+                               payload: Node([IssuerClaim(options.teamId!),
+                                         IssuedAtClaim()]),
+                               encoding: Base64URLEncoding(),
+                               signer: ES256(key: decodedKey))
 
-            let tokenString = try! jwt.token()
+            let tokenString = try! jwt.createToken()
 
             let publicKey = options.publicKey!
             
             do {
-                let jwt2 = try JWT(token: tokenString, encoding: .base64URL)
-                let verified = try jwt2.verifySignature(key: publicKey)
+                let jwt2 = try JWT(token: tokenString, encoding: Base64URLEncoding())
+                let verified = try jwt2.verifySignatureWith(ES256(key: publicKey))
                 if !verified {
                     return .error(apnsId: message.messageId, error: .invalidSignature)
                 }
@@ -198,5 +192,13 @@ extension VaporAPNS {
         } else {
             return "https://api.push.apple.com" //   /3/device/"
         }
+    }
+}
+
+struct KeyID: Header {
+    static let name = "kid"
+    var node: Node
+    init(_ keyID: String) {
+        node = Node(keyID)
     }
 }

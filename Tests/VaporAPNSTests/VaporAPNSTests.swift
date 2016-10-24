@@ -48,28 +48,21 @@ class VaporAPNSTests: XCTestCase { // TODO: Set this up so others can test this 
     }
     
     func testEncoding() throws {
-        let currentTime = Int(Date().timeIntervalSince1970.rounded())
-        let jsonPayload = try JSON(node: [
-            "iss": "D86BEC0E8B",
-            "iat": currentTime
-            ])
-        
-        let jwt = try! JWT(payload: jsonPayload,
-                           header: try! JSON(node: ["alg":"ES256","kid":"E811E6AE22","typ":"JWT"]),
-                           algorithm: .es(._256("ALEILVyGWnbBaSaIFDsh0yoZaK+Ej0po/55jG2FR6u6C")),
-                           encoding: .base64URL)
-        
-        let tokenString = try! jwt.token()
-        
+        let jwt = try! JWT(
+            additionalHeaders: [KeyID("E811E6AE22")],
+            payload: Node([IssuerClaim("D86BEC0E8B"), IssuedAtClaim()]),
+            signer: ES256(key: "ALEILVyGWnbBaSaIFDsh0yoZaK+Ej0po/55jG2FR6u6C"))
+
+        let tokenString = try! jwt.createToken()
+
         do {
-            let jwt2 = try JWT(token: tokenString, encoding: .base64URL)
-            let verified = try jwt2.verifySignature(key: "BKqKwB6hpXp9SzWGt3YxnHgCEkcbS+JSrhoqkeqru/Nf62MeE958RIiKYsLFA/czdE7ThCt46azneU0IBnMCuQU=")
+            let jwt2 = try JWT(token: tokenString)
+            let verified = try jwt2.verifySignatureWith(ES256(key: "BKqKwB6hpXp9SzWGt3YxnHgCEkcbS+JSrhoqkeqru/Nf62MeE958RIiKYsLFA/czdE7ThCt46azneU0IBnMCuQU="))
             XCTAssertTrue(verified)
         } catch {
-            //                fatalError("\(error)")
-            XCTFail ("Couldn't verify token")
+            print(error)
+            XCTFail("Couldn't verify token")
         }
-
     }
     
     static var allTests : [(String, (VaporAPNSTests) -> () throws -> Void)] {
