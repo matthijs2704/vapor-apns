@@ -45,6 +45,9 @@ open class Payload: JSONRepresentable {
     
     /// Silent push notification. This automatically ignores any other push message keys (title, body, ect.) and only the extra key-value pairs are added to the final payload
     public var contentAvailable: Bool = false
+
+    /// A Boolean indicating whether the payload contains content that can be modified by an iOS 10+ Notification Service Extension (media, encrypted content, ...) 
+    public var hasMutableContent: Bool = false
     
     /// When displaying notifications, the system visually groups notifications with the same thread identifier together.
     public var threadId: String?
@@ -111,6 +114,10 @@ open class Payload: JSONRepresentable {
 
         if let category = category {
             apsPayloadData["category"] = category
+        }
+
+        if hasMutableContent {
+            apsPayloadData["mutable-content"] = 1
         }
 
         }
