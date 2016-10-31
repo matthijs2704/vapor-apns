@@ -28,9 +28,9 @@ open class VaporAPNS {
         curlHelperSetOptInt(curlHandle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2_0)
     }
     
-    open func send(applePushMessage message: ApplePushMessage) -> Result {
+    open func send(_ message: ApplePushMessage, to deviceToken: String) -> Result {
         // Set URL
-        let url = ("\(self.hostURL(message.sandbox))/3/device/\(message.deviceToken)")
+        let url = ("\(self.hostURL(message.sandbox))/3/device/\(deviceToken)")
         curlHelperSetOptString(curlHandle, CURLOPT_URL, url)
         
         // force set port to 443
@@ -75,11 +75,13 @@ open class VaporAPNS {
                 let jwt2 = try JWT(token: tokenString, encoding: Base64URLEncoding())
                 let verified = try jwt2.verifySignatureWith(ES256(key: publicKey))
                 if !verified {
-                    return .error(apnsId: message.messageId, error: .invalidSignature)
+                    return Result.error(apnsId: message.messageId, deviceToken: deviceToken, error: .invalidSignature)
                 }
             } catch {
-//                fatalError("\(error)")
                 print ("Couldn't verify token. This is a non-fatal error, we'll try to send the notification anyway.")
+                if options.debugLogging {
+                    print("\(error)")
+                }
             }
             
             curlHeaders = curl_slist_append(curlHeaders, "Authorization: bearer \(tokenString)")
@@ -126,13 +128,13 @@ open class VaporAPNS {
                 let json = try! Jay.init(formatting: .minified).jsonFromData(try! responseData.makeBytes())
                 
                 if (json.dictionary?.keys.contains("reason"))! {
-                    result = Result.error(apnsId: message.messageId, error: APNSError.init(errorReason: json.dictionary!["reason"]!.string!))
+                    result = Result.error(apnsId: message.messageId, deviceToken: deviceToken, error: APNSError.init(errorReason: json.dictionary!["reason"]!.string!))
                 }else {
-                    result = Result.success(apnsId: message.messageId, serviceStatus: .success)
+                    result = Result.success(apnsId: message.messageId, deviceToken: deviceToken, serviceStatus: .success)
                 }
                 
             }else {
-                result = Result.success(apnsId: message.messageId, serviceStatus: .success)
+                result = Result.success(apnsId: message.messageId, deviceToken: deviceToken, serviceStatus: .success)
             }
             
             // Do some cleanup
@@ -148,8 +150,15 @@ open class VaporAPNS {
             curl_slist_free_all(curlHeaders!)
             
             // todo: Better unknown error handling?
-            return Result.error(apnsId: message.messageId, error: APNSError.unknownError(error: errorString))
+            return Result.networkError(error: SimpleError.string(message: errorString))
             
+        }
+    }
+    
+    open func send(_ message: ApplePushMessage, to deviceTokens: [String], perDeviceResultHandler: ((_ result: Result) -> Void)) {
+        for deviceToken in deviceTokens {
+            let result = self.send(message, to: deviceToken)
+            perDeviceResultHandler(result)
         }
     }
     
