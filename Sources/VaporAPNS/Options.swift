@@ -67,6 +67,32 @@ public struct Options: CustomStringConvertible, NodeInitializable {
         self.publicKey = pub
     }
     
+    
+    /// EXPERT: Initializer to use when you are unable to use the filesystem and you want to pass the final private key/public key as a String. Warning: This is only for advanced users, as there is a big chance the key is wrong and if so your notifications can not be sent.
+    ///
+    /// - parameter topic:        Topic of the notifications (your app's bundle id)
+    /// - parameter teamId:       Team identifier
+    /// - parameter keyId:        KeyID provided on Apple's Developer Portal
+    /// - parameter rawPrivKey:   String of the final raw privateKey
+    /// - parameter rawPubKey:    String of the final raw publicKey, can be "", but will cause an (non-fatal) error/warning every time a notification is sent
+    /// - parameter port:         Port of the APNS servers to use. Useful if a port is blocked by your ISP. Defaults to port 443
+    /// - parameter debugLogging: Enable debug logging
+    ///
+    /// - throws: Nothing
+    ///
+    /// - returns: Instance of Options
+    public init(topic: String, teamId: String, keyId: String, rawPrivKey: String, rawPubKey: String, port: Port = .p443, debugLogging: Bool = false) throws {
+        self.teamId = teamId
+        self.topic = topic
+        self.keyId = keyId
+
+        self.debugLogging = debugLogging
+        
+        self.privateKey = rawPrivKey
+        self.publicKey = rawPubKey
+    }
+
+    
     public init(node: Node, in context: Context) throws {
         if let topic = node["topic"]?.string {
             self.topic = topic
