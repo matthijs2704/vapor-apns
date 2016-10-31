@@ -86,19 +86,32 @@ The possibilities are endless!
 
 After we've created the payload it's time to actually send the push message. To do so, we have to create an ApplePushMessage object, by doing:
 ```swift
-let pushMessage = ApplePushMessage(topic: "nl.logicbit.TestApp", priority: .immediately, payload: payload, deviceToken: "488681b8e30e6722012aeb88f485c823b9be15c42e6cc8db1550a8f1abb590d7", sandbox: true)
+let pushMessage = ApplePushMessage(topic: "nl.logicbit.TestApp", priority: .immediately, payload: payload, sandbox: true)
 ```
 `topic` being the build identifier of your app. This is an *optional* parameter. If left out or `nil` it'll use the topic from Options you've provided in the initializer.  
 Priority can either be `.energyEfficient` or `.immediately`. What does that mean? In short, immediately will `.immediately` deliver the push notification and `.energyEfficient` will take power considerations for the device into account. Use `.immediately` for normal message push notifications and `.energyEfficient` for content-available pushes.  
-`deviceToken` is the notification registration token of the device you want to send the push to.  
 `sandbox` determines to what APNS server to send the push to. Pass `true` for development and `false` for production.
 
-Now you can send the notification using:
+Now you can send the notification to just one device, using:
 ```swift
-let result = vaporAPNS.send(applePushMessage: pushMessage)
+let result = vaporAPNS.send(pushMessage, to: "488681b8e30e6722012aeb88f485c823b9be15c42e6cc8db1550a8f1abb590d7")
 ```
-
+The `to` string is the `deviceToken`, which is the notification registration token of the device you want to send the push to.  
 You can use `result` to handle an error or a success. (Also see the Result enum)
+
+
+
+Or you can send the notification to multiple deviceTokens using:
+```swift
+vaporAPNS.send(pushMessage, to: ["488681b8e30e6722012aeb88f485c823b9be15c42e6cc8db1550a8f1abb590d7", "2d11c1a026a168cee25690f2770993f6068206b1d11d54f88910b8166b23f983"]) { result in
+    print(result)
+    if case let .success(messageId,deviceToken,serviceStatus) = result, case .success = serviceStatus {
+        print ("Success!")
+    }
+}
+```
+The block at the end is called every time a push notification is sent (you can handle errors here per notification. `to` has now changed from a String into an [String]
+
 
 Done!
 
