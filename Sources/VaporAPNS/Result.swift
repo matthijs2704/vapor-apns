@@ -12,6 +12,7 @@ public enum Result {
     case success(apnsId:String, serviceStatus: ServiceStatus)
     case error(apnsId:String, error: APNSError)
     case networkError(apnsId:String, error: Error)
+    case networkError(error: Error)
 }
 
 public enum ServiceStatus: Int, Error {

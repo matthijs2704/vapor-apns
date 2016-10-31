@@ -125,6 +125,10 @@ public enum TokenError: Error {
     case wrongTokenLength
 }
 
+public enum SimpleError: Error {
+    case string(message: String)
+}
+
 public enum InitializeError: Error, CustomStringConvertible {
     case noAuthentication
     case noTopic
