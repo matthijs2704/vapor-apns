@@ -27,7 +27,7 @@ brew link curl --force
 Add the following dependency to your `Package.swift` file:
 
 ```swift
-.Package(url:"https://github.com/matthijs2704/vapor-apns.git", majorVersion: 1, minor: 0)
+.Package(url:"https://github.com/matthijs2704/vapor-apns.git", majorVersion: 1, minor: 1)
 ```
 
 And then run `vapor fetch` command, if you have the Vapor toolbox installed.
