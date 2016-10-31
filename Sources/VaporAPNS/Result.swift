@@ -9,9 +9,8 @@
 import Foundation
 
 public enum Result {
-    case success(apnsId:String, serviceStatus: ServiceStatus)
-    case error(apnsId:String, error: APNSError)
-    case networkError(apnsId:String, error: Error)
+    case success(apnsId:String, deviceToken: String, serviceStatus: ServiceStatus)
+    case error(apnsId:String, deviceToken: String, error: APNSError)
     case networkError(error: Error)
 }
 
