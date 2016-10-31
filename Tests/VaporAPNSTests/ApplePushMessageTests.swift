@@ -14,9 +14,8 @@ class ApplePushMessageTests: XCTestCase {
     
     func testInitializer() {
         let simplePayload = Payload(message: "Test message")
-        let pushMessage = ApplePushMessage(topic: "com.apple.Test", priority: .immediately, expirationDate: nil, payload: simplePayload, deviceToken: "4d0d23228df911e6ae2256b6b6499611", sandbox: true, collapseIdentifier: "collapseID", threadIdentifier: "threadId")
+        let pushMessage = ApplePushMessage(topic: "com.apple.Test", priority: .immediately, expirationDate: nil, payload: simplePayload,sandbox: true, collapseIdentifier: "collapseID", threadIdentifier: "threadId")
         
-        XCTAssertEqual(pushMessage.deviceToken, "4d0d23228df911e6ae2256b6b6499611")
         XCTAssertEqual(pushMessage.topic, "com.apple.Test")
          XCTAssertTrue(pushMessage.sandbox)
          XCTAssertEqual(pushMessage.collapseIdentifier, "collapseID")
