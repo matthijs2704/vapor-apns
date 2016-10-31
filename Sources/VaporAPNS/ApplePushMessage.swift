@@ -10,13 +10,7 @@ import Foundation
 import JSON
 
 /// Apple Push Notification Message
-public struct ApplePushMessage: NodeRepresentable {
-    /// Called when there was a response from the server
-    public typealias ResponseCallback = (Result) -> Void
-    
-    /// Called when there was an error
-    public typealias ErrorCallback = (Error) -> Void
-    
+public struct ApplePushMessage {
     /// Message ID
     public let messageId: String = UUID().uuidString
     
@@ -49,12 +43,6 @@ public struct ApplePushMessage: NodeRepresentable {
     /// Use sandbox server URL or not
     public let sandbox:Bool
     
-    /// Response Clousure
-    public var responseCallback: ResponseCallback?
-    
-    /// Network error Clousure
-    public var networkError: ErrorCallback?
-    
     public init(topic: String? = nil, priority: Priority, expirationDate: Date? = nil, payload: Payload, deviceToken:String, sandbox:Bool = true, collapseIdentifier: String? = nil, threadIdentifier: String? = nil) {
         self.topic = topic
         self.priority = priority
@@ -66,7 +54,4 @@ public struct ApplePushMessage: NodeRepresentable {
         self.threadIdentifier = threadIdentifier
     }
     
-    public func makeNode(context ntext: Context) throws -> Node {
-        return EmptyNode
-    }
 }

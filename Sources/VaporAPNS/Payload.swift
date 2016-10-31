@@ -8,6 +8,7 @@
 
 import Foundation
 import JSON
+import Core
 
 open class Payload: JSONRepresentable {
     /// The number to display as the badge of the app icon.
@@ -153,9 +154,69 @@ public extension Payload {
     
     
     /// A simple, already made, Content-Available payload
-    public static var contentAvailable: Payload = {
+    public static var contentAvailable: Payload {
         let payload = Payload()
         payload.contentAvailable = true
         return payload
-    }()
+    }
+}
+
+extension Payload: Equatable {
+    
+    public static func ==(lhs: Payload, rhs: Payload) -> Bool {
+        guard lhs.badge == rhs.badge else {
+            return false
+        }
+        
+        guard lhs.title == rhs.title else {
+            return false
+        }
+
+        guard lhs.body == rhs.body else {
+            return false
+        }
+
+        guard lhs.titleLocKey == rhs.titleLocKey else {
+            return false
+        }
+
+        guard lhs.titleLocArgs != nil && rhs.titleLocArgs != nil && lhs.titleLocArgs! == rhs.titleLocArgs! else {
+            return false
+        }
+
+        guard lhs.actionLocKey == rhs.actionLocKey else {
+            return false
+        }
+
+        guard lhs.bodyLocKey == rhs.bodyLocKey else {
+            return false
+        }
+
+        guard lhs.bodyLocArgs != nil && rhs.bodyLocArgs != nil && lhs.bodyLocArgs! == rhs.bodyLocArgs! else {
+            return false
+        }
+
+        guard lhs.launchImage == rhs.launchImage else {
+            return false
+        }
+
+        guard lhs.sound == rhs.sound else {
+            return false
+        }
+
+        guard lhs.contentAvailable == rhs.contentAvailable else {
+            return false
+        }
+
+        guard lhs.threadId == rhs.threadId else {
+            return false
+        }
+
+//        guard lhs.extra == rhs.extra else {
+//            return false
+//        }
+
+        return true
+    }
+    
 }
