@@ -59,13 +59,13 @@ open class VaporAPNS {
         let headers = self.requestHeaders(for: message)
         var curlHeaders: UnsafeMutablePointer<curl_slist>?
         if !options.usesCertificateAuthentication {
-            let decodedKey = options.privateKey!
+            let privateKey = options.privateKey!
 
             let jwt = try! JWT(additionalHeaders: [KeyID(options.keyId!)],
                                payload: Node([IssuerClaim(options.teamId!),
                                          IssuedAtClaim()]),
                                encoding: Base64URLEncoding(),
-                               signer: ES256(key: decodedKey))
+                               signer: ES256(encodedKey: privateKey))
 
             let tokenString = try! jwt.createToken()
 
@@ -73,7 +73,7 @@ open class VaporAPNS {
             
             do {
                 let jwt2 = try JWT(token: tokenString, encoding: Base64URLEncoding())
-                let verified = try jwt2.verifySignatureWith(ES256(key: publicKey))
+                let verified = try jwt2.verifySignatureWith(ES256(encodedKey: publicKey))
                 if !verified {
                     return Result.error(apnsId: message.messageId, deviceToken: deviceToken, error: .invalidSignature)
                 }
