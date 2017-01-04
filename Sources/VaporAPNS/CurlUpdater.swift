@@ -267,7 +267,7 @@ internal class CurlUpdater {
         let currentDirectory = URL(fileURLWithPath: FileManager().currentDirectoryPath)
         let destination = currentDirectory
         
-        let cleanupLoadingBar = console.loadingBar(title: "Cloning nghttp2...")
+        let cleanupLoadingBar = console.loadingBar(title: "Cleaning up...")
         cleanupLoadingBar.start()
         try? FileManager.default.removeItem(at: destination.appendingPathComponent("build_nghttp2.sh"))
         try? FileManager.default.removeItem(at: destination.appendingPathComponent("install_nghttp2.sh"))
