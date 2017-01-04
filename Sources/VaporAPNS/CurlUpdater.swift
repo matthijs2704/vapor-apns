@@ -230,7 +230,7 @@ internal class CurlUpdater {
         let buildingLoadingBar = console.loadingBar(title: "Building curl...")
         buildingLoadingBar.start()
         let buildScriptText = "#! /usr/bin/env bash\ncd curl-7.52.1\n./configure --with-nghttp2=/usr/local --with-ssl > /dev/null 2>&1\nmake > /dev/null 2>&1"
-        let installScriptText = "#! /usr/bin/env bash\ncd curl-7.52.1\n\(shouldSudo ? "sudo" : "") make install > /dev/null 2>&1\n\(shouldSudo ? "sudo" : "") ldconfig > /dev/null 2>&1"
+        let installScriptText = "#! /usr/bin/env bash\ncd curl-7.52.1\n\(shouldSudo ? "sudo" : "") make install > /dev/null 2>&1\n\(shouldSudo ? "sudo" : "") ldconfig > /dev/null 2>&1\nsudo ln -fs /usr/local/bin/curl /usr/bin/curl"
         do {
             try buildScriptText.write(to: destination.appendingPathComponent("build_curl.sh"), atomically: false, encoding: String.Encoding.utf8)
             try installScriptText.write(to: destination.appendingPathComponent("install_curl.sh"), atomically: false, encoding: String.Encoding.utf8)
