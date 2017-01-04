@@ -30,6 +30,9 @@ public struct Options: CustomStringConvertible, NodeInitializable {
 
     public var debugLogging: Bool = false
     
+    public var disableCurlCheck: Bool = false
+    public var forceCurlInstall: Bool = false
+    
     public var usesCertificateAuthentication: Bool {
         return certPath != nil && keyPath != nil
     }

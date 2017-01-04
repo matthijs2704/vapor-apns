@@ -5,6 +5,7 @@ import CCurl
 import JSON
 import Jay
 import VaporJWT
+import Console
 
 open class VaporAPNS {
     fileprivate var options: Options
@@ -14,8 +15,19 @@ open class VaporAPNS {
     public init(options: Options) throws {
         self.options = options
         
-        self.curlHandle = curl_easy_init()
+        if !options.disableCurlCheck {
+            if options.forceCurlInstall {
+                let curlupdater = CurlUpdater()
+                curlupdater.updateCurl()
+            }else {
+                let curlVersionChecker = CurlVersionHelper()
+                curlVersionChecker.checkVersion()
+            }
+        }
         
+        
+        self.curlHandle = curl_easy_init()
+    
         curlHelperSetOptBool(curlHandle, CURLOPT_VERBOSE, options.debugLogging ? CURL_TRUE : CURL_FALSE)
 
         if self.options.usesCertificateAuthentication {
