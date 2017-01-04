@@ -59,7 +59,7 @@ internal class CurlUpdater {
     }
  
     private func done() {
-        console.success("🚀 Done! Now restart your vapor project and all should be working!", newLine: true)
+        console.success("🚀 Done! Now restart your Vapor project and all should be working!", newLine: true)
         exit(0)
     }
     
