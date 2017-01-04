@@ -24,12 +24,12 @@ extension String {
     
     /// Converts the string (which is a path for the auth key) to a token string
     func tokenString() throws -> (privateKey: String, publicKey: String) {
-        guard let authKeyUrl = URL(string: "file://\(self)") else {
+        guard FileManager.default.fileExists(atPath: self) else {
             throw TokenError.invalidAuthKey
         }
-
+        
         // Fold p8 file and write it back to the file
-        let fileString = try String(contentsOf: authKeyUrl, encoding: .utf8)
+        let fileString = try String.init(contentsOfFile: self, encoding: .utf8)
         guard
             let privateKeyString =
             fileString.collapseWhitespace().trimmingCharacters(in: .whitespaces).between(
