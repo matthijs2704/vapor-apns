@@ -16,11 +16,11 @@ internal class CurlUpdater {
     
     internal func updateCurl() {
         #if os(macOS)
-        updateCurlMacOS()
+            updateCurlMacOS()
         #elseif os(Linux)
             let username = NSUserName()
             shouldSudo = username != "root"
-        updateCurlLinux()
+            updateCurlLinux()
         #endif
     }
     
@@ -36,6 +36,7 @@ internal class CurlUpdater {
             let response = console.ask("Would you like to install Homebrew? [y/n]")
             if response == "y" {
                 installHomebrew()
+                updateCurlMacOS()
             }else {
                 exit(1)
             }
@@ -58,7 +59,8 @@ internal class CurlUpdater {
     }
  
     private func done() {
-        console.success("🚀 Done! Now ", newLine: true)
+        console.success("🚀 Done! Now restart your vapor project and all should be working!", newLine: true)
+        exit(0)
     }
     
     // MARK: - apt-get (Linux/Ubuntu)
