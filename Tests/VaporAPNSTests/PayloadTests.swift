@@ -48,7 +48,18 @@ class PayloadTests: XCTestCase { // TODO: Set this up so others can test this ðŸ
         
         XCTAssertEqual(plString, expectedJSON)
     }
-    
+
+    func testTitleSubtitleBodyPush() throws {
+        let expectedJSON = "{\"aps\":{\"alert\":{\"body\":\"Test body\",\"subtitle\":\"Test subtitle\",\"title\":\"Test title\"}}}"
+
+        let payload = Payload.init(title: "Test title", body: "Test body")
+        payload.subtitle = "Test subtitle"
+        let plJosn = try payload.makeJSON()
+        let plString = try plJosn.toString()
+
+        XCTAssertEqual(plString, expectedJSON)
+    }
+
     func testContentAvailablePush() throws {
         let expectedJSON = "{\"aps\":{\"content-available\":true}}"
         
