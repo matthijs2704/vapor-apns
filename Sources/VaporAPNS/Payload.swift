@@ -17,6 +17,9 @@ open class Payload: JSONRepresentable {
     /// A short string describing the purpose of the notification. Apple Watch displays this string as part of the notification interface. This string is displayed only briefly and should be crafted so that it can be understood quickly. This key was added in iOS 8.2.
     public var title: String?
     
+    // A secondary description of the reason for the alert.
+    public var subtitle: String?
+
     /// The text of the alert message. Can be nil if using titleLocKey
     public var body: String?
     
@@ -82,6 +85,10 @@ open class Payload: JSONRepresentable {
             }
         }
         
+        if let subtitle = subtitle {
+            alert["subtitle"] = subtitle
+        }
+
         if let body = body {
             alert["body"] = body
         }else {
