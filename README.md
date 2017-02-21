@@ -30,7 +30,7 @@ Add the following dependency to your `Package.swift` file:
 .Package(url:"https://github.com/matthijs2704/vapor-apns.git", majorVersion: 1, minor: 1)
 ```
 
-And then run `vapor fetch` command, if you have the Vapor toolbox installed.
+And then make sure to regenerate your xcode project. You can use `vapor xcode -y` command, if you have the Vapor toolbox installed.
 
 ## 🚀 Usage
 
