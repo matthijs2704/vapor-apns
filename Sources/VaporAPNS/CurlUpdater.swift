@@ -106,7 +106,7 @@ internal class CurlUpdater {
     }
     
     private func buildnghttp2() {
-        let cwd = FileManager.default.currentDirectoryPath
+        _ = FileManager.default.currentDirectoryPath
 //        print("script run from:\n" + cwd)
 //        let (currentWorkDirr, _) = shell("pwd", workPath: "\(cwd)/nghttp2")
 //        fatalError("\(currentWorkDirr)/nghttp2")

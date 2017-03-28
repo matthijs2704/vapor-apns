@@ -142,10 +142,10 @@ public struct Options: CustomStringConvertible, NodeInitializable {
             "Topic \(topic)" +
                 "\nPort \(port.rawValue)" +
                 "\nPort \(port.rawValue)" +
-                "\nCER - Certificate path: \(certPath)" +
-                "\nCER - Key path: \(keyPath)" +
-                "\nTOK - Key ID: \(keyId)" +
-                "\nTOK - Private key: \(privateKey)" +
-                "\nTOK - Public key: \(publicKey)"
+                "\nCER - Certificate path: \(String(describing: certPath))" +
+                "\nCER - Key path: \(String(describing: keyPath))" +
+                "\nTOK - Key ID: \(String(describing: keyId))" +
+                "\nTOK - Private key: \(String(describing: privateKey))" +
+                "\nTOK - Public key: \(String(describing: publicKey))"
     }
 }
