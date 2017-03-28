@@ -10,9 +10,11 @@ import Foundation
 import CLibreSSL
 import Core
 
+/*
 #if os(Linux)
     typealias NSRegularExpression = RegularExpression
 #endif
+ */
 
 extension String {
     private func newECKey() throws -> OpaquePointer {
