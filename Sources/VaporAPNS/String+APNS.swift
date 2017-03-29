@@ -10,7 +10,7 @@ import Foundation
 import CLibreSSL
 import Core
 
-#if os(Linux)
+#if os(Linux) && !swift(>=3.1)
     typealias NSRegularExpression = RegularExpression
 #endif
 
