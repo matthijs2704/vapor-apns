@@ -51,13 +51,13 @@ class VaporAPNSTests: XCTestCase { // TODO: Set this up so others can test this 
         let jwt = try! JWT(
             additionalHeaders: [KeyID("E811E6AE22")],
             payload: Node([IssuerClaim("D86BEC0E8B"), IssuedAtClaim()]),
-            signer: ES256(key: "ALEILVyGWnbBaSaIFDsh0yoZaK+Ej0po/55jG2FR6u6C".makeBytes()))
+            signer: ES256(key: "ALEILVyGWnbBaSaIFDsh0yoZaK+Ej0po/55jG2FR6u6C".bytes.base64Decoded))
 
         let tokenString = try! jwt.createToken()
 
         do {
             let jwt2 = try JWT(token: tokenString)
-            try jwt2.verifySignature(using: ES256(key: "BKqKwB6hpXp9SzWGt3YxnHgCEkcbS+JSrhoqkeqru/Nf62MeE958RIiKYsLFA/czdE7ThCt46azneU0IBnMCuQU=".makeBytes()))
+            try jwt2.verifySignature(using: ES256(key: "BKqKwB6hpXp9SzWGt3YxnHgCEkcbS+JSrhoqkeqru/Nf62MeE958RIiKYsLFA/czdE7ThCt46azneU0IBnMCuQU=".bytes.base64Decoded))
             XCTAssertTrue(true) // Since verifySignature will throw on an invalid signature, we'll just pass true here
         } catch {
             print(error)

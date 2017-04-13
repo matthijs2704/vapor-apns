@@ -71,7 +71,7 @@ open class VaporAPNS {
         let headers = self.requestHeaders(for: message)
         var curlHeaders: UnsafeMutablePointer<curl_slist>?
         if !options.usesCertificateAuthentication {
-            let privateKey = try! options.privateKey!.makeBytes()
+            let privateKey = options.privateKey!.bytes.base64Decoded
 
             let jwt = try! JWT(additionalHeaders: [KeyID(options.keyId!)],
                                payload: Node([IssuerClaim(options.teamId!),
@@ -81,7 +81,7 @@ open class VaporAPNS {
 
             let tokenString = try! jwt.createToken()
 
-            let publicKey = try! options.publicKey!.makeBytes()
+            let publicKey = options.publicKey!.bytes.base64Decoded
             
             do {
                 let jwt2 = try JWT(token: tokenString, encoding: Base64URLEncoding())
@@ -89,7 +89,7 @@ open class VaporAPNS {
                     try jwt2.verifySignature(using: ES256(key: publicKey))
                 } catch {
                     // If we fail here, its an invalid signature
-                    return Result.error(apnsId: message.messageId, deviceToken: deviceToken, error: .invalidSignature)
+//                    return Result.error(apnsId: message.messageId, deviceToken: deviceToken, error: .invalidSignature)
                 }
                 
             } catch {
@@ -99,7 +99,7 @@ open class VaporAPNS {
                 }
             }
             
-            curlHeaders = curl_slist_append(curlHeaders, "Authorization: bearer \(tokenString)")
+            curlHeaders = curl_slist_append(curlHeaders, "Authorization: bearer \(tokenString.replacingOccurrences(of: " ", with: ""))")
         }
         curlHeaders = curl_slist_append(curlHeaders, "User-Agent: VaporAPNS/1.0.1")
         for header in headers {
