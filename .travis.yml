@@ -5,5 +5,4 @@ language: generic
 sudo: required
 dist: trusty
 osx_image: xcode8.3
-install: ./.ci/install_dependencies.sh
 script: ./.ci/build.sh

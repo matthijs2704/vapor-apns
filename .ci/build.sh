@@ -1,3 +1,6 @@
+#!/usr/bin/env bash
+
+./.ci/install_dependencies.sh
 echo "🚀 Building";
 swift build
 if [[ $? != 0 ]]; 
