@@ -5,6 +5,5 @@ language: generic
 sudo: required
 dist: trusty
 osx_image: xcode8.3
-script:
-  - eval "$(curl -sL https://swift.vapor.sh/ci)"
-  - eval "$(curl -sL https://swift.vapor.sh/codecov)"
+install: ./.ci/install_dependencies.sh
+script: ./.ci/build.sh
