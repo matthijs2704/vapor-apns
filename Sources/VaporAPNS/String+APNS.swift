@@ -74,10 +74,12 @@ extension String {
         
 //        print (privateKey)
         let privData = privateKey.dataFromHexadecimalString()!
-        let privBase64String = privData.base64EncodedString()
+        
+        let privBase64String = try String.init(bytes: privData.base64Encoded)
+        
         
         let pubData = publicKey.dataFromHexadecimalString()!
-        let pubBase64String = pubData.base64EncodedString()
+        let pubBase64String = try String.init(bytes: pubData.base64Encoded)
 
         return (privBase64String, pubBase64String)
     }
@@ -89,15 +91,15 @@ extension String {
         ///
         /// - returns: Data represented by this hexadecimal string.
         
-        func dataFromHexadecimalString() -> NSData? {
-            let data = NSMutableData(capacity: characters.count / 2)
+        func dataFromHexadecimalString() -> Data? {
+            var data = Data(capacity: characters.count / 2)
             
             let regex = try! NSRegularExpression(pattern: "[0-9a-f]{1,2}", options: .caseInsensitive)
             regex.enumerateMatches(in: self, options: [], range: NSMakeRange(0, characters.count)) { match, flags, stop in
                 let range = self.range(from: match!.range)
                 let byteString = self.substring(with: range!)
                 var num = UInt8(byteString, radix: 16)
-                data?.append(&num, length: 1)
+                data.append(&num!, count: 1)
             }
             
             return data

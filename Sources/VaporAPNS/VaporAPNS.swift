@@ -4,7 +4,7 @@ import JSON
 import CCurl
 import JSON
 import Jay
-import VaporJWT
+import JWT
 import Console
 
 open class VaporAPNS {
@@ -71,24 +71,27 @@ open class VaporAPNS {
         let headers = self.requestHeaders(for: message)
         var curlHeaders: UnsafeMutablePointer<curl_slist>?
         if !options.usesCertificateAuthentication {
-            let privateKey = options.privateKey!
+            let privateKey = options.privateKey!.bytes.base64Decoded
 
             let jwt = try! JWT(additionalHeaders: [KeyID(options.keyId!)],
                                payload: Node([IssuerClaim(options.teamId!),
                                          IssuedAtClaim()]),
                                encoding: Base64URLEncoding(),
-                               signer: ES256(encodedKey: privateKey))
+                               signer: ES256(key: privateKey))
 
             let tokenString = try! jwt.createToken()
 
-            let publicKey = options.publicKey!
+            let publicKey = options.publicKey!.bytes.base64Decoded
             
             do {
                 let jwt2 = try JWT(token: tokenString, encoding: Base64URLEncoding())
-                let verified = try jwt2.verifySignatureWith(ES256(encodedKey: publicKey))
-                if !verified {
-                    return Result.error(apnsId: message.messageId, deviceToken: deviceToken, error: .invalidSignature)
+                do {
+                    try jwt2.verifySignature(using: ES256(key: publicKey))
+                } catch {
+                    // If we fail here, its an invalid signature
+//                    return Result.error(apnsId: message.messageId, deviceToken: deviceToken, error: .invalidSignature)
                 }
+                
             } catch {
                 print ("Couldn't verify token. This is a non-fatal error, we'll try to send the notification anyway.")
                 if options.debugLogging {
@@ -96,7 +99,7 @@ open class VaporAPNS {
                 }
             }
             
-            curlHeaders = curl_slist_append(curlHeaders, "Authorization: bearer \(tokenString)")
+            curlHeaders = curl_slist_append(curlHeaders, "Authorization: bearer \(tokenString.replacingOccurrences(of: " ", with: ""))")
         }
         curlHeaders = curl_slist_append(curlHeaders, "User-Agent: VaporAPNS/1.0.1")
         for header in headers {
