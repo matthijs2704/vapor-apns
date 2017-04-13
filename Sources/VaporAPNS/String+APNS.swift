@@ -92,17 +92,17 @@ extension String {
         /// - returns: Data represented by this hexadecimal string.
         
         func dataFromHexadecimalString() -> Data? {
-            let data = NSMutableData(capacity: characters.count / 2)
+            var data = Data(capacity: characters.count / 2)
             
             let regex = try! NSRegularExpression(pattern: "[0-9a-f]{1,2}", options: .caseInsensitive)
             regex.enumerateMatches(in: self, options: [], range: NSMakeRange(0, characters.count)) { match, flags, stop in
                 let range = self.range(from: match!.range)
                 let byteString = self.substring(with: range!)
                 var num = UInt8(byteString, radix: 16)
-                data?.append(&num, length: 1)
+                data.append(&num!, count: 1)
             }
             
-            return data as! Data?
+            return data
         }
     
     func splitByLength(_ length: Int) -> [String] {
