@@ -37,6 +37,10 @@ public struct Options: CustomStringConvertible, NodeInitializable {
         return certPath != nil && keyPath != nil
     }
     
+    public init(node: Node) throws {
+        abort()
+    }
+    
     public init(topic: String, certPath: String, keyPath: String, port: Port = .p443, debugLogging: Bool = false) throws {
         self.topic = topic
         self.certPath = certPath

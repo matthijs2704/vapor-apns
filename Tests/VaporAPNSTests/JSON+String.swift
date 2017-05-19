@@ -2,7 +2,7 @@
 //  JSON+String.swift
 //  VaporAPNS
 //
-//  Created by Matthijs Logemann on 01/10/2016.
+//  Created by Jimmy Arts on 19/05/2017.
 //
 //
 
@@ -12,7 +12,7 @@ import JSON
 extension JSON {
     func toString() throws -> String {
         let bytes = try self.serialize(prettyPrint: false)
-        let data = Data.init(bytes: bytes)
+        let data = Data(bytes: bytes)
         let plString = String(data: data, encoding: .utf8)
         return plString!
     }

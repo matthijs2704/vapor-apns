@@ -75,35 +75,35 @@ extension String {
 //        print (privateKey)
         let privData = privateKey.dataFromHexadecimalString()!
         
-        let privBase64String = try String.init(bytes: privData.base64Encoded)
+        let privBase64String = String(bytes: privData.base64Encoded)
         
         
         let pubData = publicKey.dataFromHexadecimalString()!
-        let pubBase64String = try String.init(bytes: pubData.base64Encoded)
-
+        let pubBase64String = String(bytes: pubData.base64Encoded)
+        
         return (privBase64String, pubBase64String)
     }
     
     
-        /// Create `NSData` from hexadecimal string representation
-        ///
-        /// This takes a hexadecimal representation and creates a `NSData` object. Note, if the string has any spaces or non-hex characters (e.g. starts with '<' and with a '>'), those are ignored and only hex characters are processed.
-        ///
-        /// - returns: Data represented by this hexadecimal string.
+    /// Create `NSData` from hexadecimal string representation
+    ///
+    /// This takes a hexadecimal representation and creates a `NSData` object. Note, if the string has any spaces or non-hex characters (e.g. starts with '<' and with a '>'), those are ignored and only hex characters are processed.
+    ///
+    /// - returns: Data represented by this hexadecimal string.
+    
+    func dataFromHexadecimalString() -> Data? {
+        var data = Data(capacity: characters.count / 2)
         
-        func dataFromHexadecimalString() -> Data? {
-            var data = Data(capacity: characters.count / 2)
-            
-            let regex = try! NSRegularExpression(pattern: "[0-9a-f]{1,2}", options: .caseInsensitive)
-            regex.enumerateMatches(in: self, options: [], range: NSMakeRange(0, characters.count)) { match, flags, stop in
-                let range = self.range(from: match!.range)
-                let byteString = self.substring(with: range!)
-                var num = UInt8(byteString, radix: 16)
-                data.append(&num!, count: 1)
-            }
-            
-            return data
+        let regex = try! NSRegularExpression(pattern: "[0-9a-f]{1,2}", options: .caseInsensitive)
+        regex.enumerateMatches(in: self, options: [], range: NSMakeRange(0, characters.count)) { match, flags, stop in
+            let range = self.range(from: match!.range)
+            let byteString = self.substring(with: range!)
+            var num = UInt8(byteString, radix: 16)
+            data.append(&num!, count: 1)
         }
+        
+        return data
+    }
     
     func splitByLength(_ length: Int) -> [String] {
         var result = [String]()

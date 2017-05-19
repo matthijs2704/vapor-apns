@@ -10,11 +10,7 @@ import Foundation
 import XCTest
 @testable import class VaporAPNS.Payload
 
-class PayloadTests: XCTestCase { // TODO: Set this up so others can test this ðŸ˜‰
-    
-    override func setUp() {
-//        print ("Hi")
-    }
+class PayloadTests: XCTestCase {
     
     func testInitializer() throws {
     }
@@ -40,7 +36,7 @@ class PayloadTests: XCTestCase { // TODO: Set this up so others can test this ðŸ
     }
     
     func testTitleBodyBadgePush() throws {
-        let expectedJSON = "{\"aps\":{\"alert\":{\"body\":\"Test body\",\"title\":\"Test title\"},\"badge\":10}}"
+        let expectedJSON = "{\"aps\":{\"badge\":10,\"alert\":{\"body\":\"Test body\",\"title\":\"Test title\"}}}"
         
         let payload = Payload.init(title: "Test title", body: "Test body", badge: 10)
         let plJosn = try payload.makeJSON()
@@ -50,7 +46,7 @@ class PayloadTests: XCTestCase { // TODO: Set this up so others can test this ðŸ
     }
 
     func testTitleSubtitleBodyPush() throws {
-        let expectedJSON = "{\"aps\":{\"alert\":{\"body\":\"Test body\",\"subtitle\":\"Test subtitle\",\"title\":\"Test title\"}}}"
+        let expectedJSON = "{\"aps\":{\"alert\":{\"body\":\"Test body\",\"title\":\"Test title\",\"subtitle\":\"Test subtitle\"}}}"
 
         let payload = Payload.init(title: "Test title", body: "Test body")
         payload.subtitle = "Test subtitle"
@@ -71,7 +67,7 @@ class PayloadTests: XCTestCase { // TODO: Set this up so others can test this ðŸ
     }
     
     func testContentAvailableWithExtrasPush() throws {
-        let expectedJSON = "{\"IntKey\":101,\"StringKey\":\"StringExtra1\",\"aps\":{\"content-available\":true}}"
+        let expectedJSON = "{\"IntKey\":101,\"aps\":{\"content-available\":true},\"StringKey\":\"StringExtra1\"}"
         let linuxExpectedJSON = "{\"aps\":{\"content-available\":true},\"IntKey\":101,\"StringKey\":\"StringExtra1\"}"
         
         let payload = Payload.contentAvailable

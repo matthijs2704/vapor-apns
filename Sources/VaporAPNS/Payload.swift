@@ -81,7 +81,7 @@ open class Payload: JSONRepresentable {
             alert["title-loc-key"] = titleLocKey
             
             if let titleLocArgs = titleLocArgs {
-                alert["title-loc-args"] = try titleLocArgs.makeNode()
+                alert["title-loc-args"] = try titleLocArgs.makeNode(in: nil)
             }
         }
         
@@ -96,7 +96,7 @@ open class Payload: JSONRepresentable {
                 alert["loc-key"] = bodyLocKey
                 
                 if let bodyLocArgs = bodyLocArgs {
-                    alert["loc-args"] = try bodyLocArgs.makeNode()
+                    alert["loc-args"] = try bodyLocArgs.makeNode(in: nil)
                 }
             }
         }
@@ -110,7 +110,7 @@ open class Payload: JSONRepresentable {
         }
         // Alert dictionary created
         
-        apsPayloadData["alert"] = try alert.makeNode()
+        apsPayloadData["alert"] = try alert.makeNode(in: nil)
         
         if let badge = badge {
             apsPayloadData["badge"] = badge
@@ -130,12 +130,12 @@ open class Payload: JSONRepresentable {
 
         }
         
-        payloadData["aps"] = try apsPayloadData.makeNode()
+        payloadData["aps"] = try apsPayloadData.makeNode(in: nil)
         for (key, value) in extra {
             payloadData[key] = value
         }
         
-        let json = try JSON(node: try payloadData.makeNode())
+        let json = JSON(node: try payloadData.makeNode(in: nil))
         return json
     }
 }
