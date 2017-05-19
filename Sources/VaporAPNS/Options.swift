@@ -37,10 +37,6 @@ public struct Options: CustomStringConvertible, NodeInitializable {
         return certPath != nil && keyPath != nil
     }
     
-    public init(node: Node) throws {
-        abort()
-    }
-    
     public init(topic: String, certPath: String, keyPath: String, port: Port = .p443, debugLogging: Bool = false) throws {
         self.topic = topic
         self.certPath = certPath
@@ -100,10 +96,10 @@ public struct Options: CustomStringConvertible, NodeInitializable {
     }
 
     
-    public init(node: Node, in context: Context) throws {
+    public init(node: Node) throws {
         if let topic = node["topic"]?.string {
             self.topic = topic
-        }else {
+        } else {
             throw InitializeError.noTopic
         }
         
@@ -111,33 +107,28 @@ public struct Options: CustomStringConvertible, NodeInitializable {
             self.port = port
         }
         
-        var hasAnyAuthentication = false
-        var hasBothAuthentication = false
-
-        if let certPath = node["certificatePath"]?.string, let keyPath = node["keyPath"]?.string {
-            hasAnyAuthentication = true
-            self.certPath = certPath
-            self.keyPath = keyPath
-            
-        }
+        var hasAuthentication = false
         
         if let privateKeyLocation = node["keyPath"]?.string, let keyId = node["keyId"]?.string {
-            if hasAnyAuthentication { hasBothAuthentication = true }
-            hasAnyAuthentication = true
+            hasAuthentication = true
             let (priv, pub) = try privateKeyLocation.tokenString()
             self.privateKey = priv
             self.publicKey = pub
             self.keyId = keyId
         }
-        
-        guard hasAnyAuthentication else {
-            throw InitializeError.noAuthentication
+
+        if let certPath = node["certificatePath"]?.string, let keyPath = node["keyPath"]?.string {
+            if hasAuthentication {
+                print ("You've seem to have specified both authentication methods, choosing preferred APNS Auth Key method...")
+            } else {
+                hasAuthentication = true
+                self.certPath = certPath
+                self.keyPath = keyPath
+            }
         }
         
-        if hasBothAuthentication {
-            print ("You've seem to have specified both authentication methods, choosing preferred APNS Auth Key method...")
-            certPath = nil
-            keyPath = nil
+        guard hasAuthentication else {
+            throw InitializeError.noAuthentication
         }
     }
     
