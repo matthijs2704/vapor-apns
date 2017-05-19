@@ -41,6 +41,7 @@ then
     export PATH=$PWD/$SWIFTFILE/usr/bin:"${PATH}"
 else
     echo "📚 Installing Dependencies"
+    brew tap vapor/homebrew-tap
     brew install ctls
 fi
 
