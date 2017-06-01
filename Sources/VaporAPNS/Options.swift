@@ -97,11 +97,10 @@ public struct Options: CustomStringConvertible, NodeInitializable {
 
     
     public init(node: Node) throws {
-        if let topic = node["topic"]?.string {
-            self.topic = topic
-        } else {
+        guard let topic = node["topic"]?.string else {
             throw InitializeError.noTopic
         }
+        self.topic = topic
         
         if let portRaw = node["port"]?.int, let port = Port(rawValue: portRaw) {
             self.port = port
