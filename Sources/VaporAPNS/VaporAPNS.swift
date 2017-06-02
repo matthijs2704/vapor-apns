@@ -71,13 +71,12 @@ open class VaporAPNS {
         var curlHeaders: UnsafeMutablePointer<curl_slist>?
         if !options.usesCertificateAuthentication {
             let privateKey = options.privateKey!.bytes.base64Decoded
-            let claims: [Node] = [
-                IssuerClaim(string: options.teamId!).node,
-                IssuedAtClaim().node
+            let claims: [Claim] = [
+                IssuerClaim(string: options.teamId!),
+                IssuedAtClaim()
             ]
-            let claimsPayload = try! claims.makeNode(in: nil).converted(to: JSON.self)
             let jwt = try! JWT(additionalHeaders: [KeyID(options.keyId!)],
-                               payload: claimsPayload,
+                               payload: JSON(claims),
                                signer: ES256(key: privateKey))
 
             let tokenString = try! jwt.createToken()
