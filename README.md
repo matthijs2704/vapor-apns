@@ -3,7 +3,7 @@
 # VaporAPNS
 
 ![Swift](http://img.shields.io/badge/swift-3.1-brightgreen.svg)
-![Vapor](https://img.shields.io/badge/Vapor-1.5.15-green.svg)
+![Vapor](https://img.shields.io/badge/Vapor-2.0-green.svg)
 [![Crates.io](https://img.shields.io/crates/l/rustc-serialize.svg?maxAge=2592000)]()
 [![Build Status](https://travis-ci.org/matthijs2704/vapor-apns.svg?branch=master)](https://travis-ci.org/matthijs2704/vapor-apns)
 
