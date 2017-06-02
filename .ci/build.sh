@@ -39,33 +39,37 @@ then
     wget https://swift.org/builds/swift-$VERSION-release/$OS/swift-$VERSION-RELEASE/$SWIFTFILE.tar.gz
     tar -zxf $SWIFTFILE.tar.gz
     export PATH=$PWD/$SWIFTFILE/usr/bin:"${PATH}"
+else
+    echo "📚 Installing Dependencies"
+    brew tap vapor/homebrew-tap
+    brew install ctls
 fi
 
 echo "📅 Version: `swift --version`";
 
 echo "🚀 Building";
 swift build
-if [[ $? != 0 ]]; 
-then 
+if [[ $? != 0 ]];
+then
     echo "❌  Build failed";
-    exit 1; 
+    exit 1;
 fi
 
 echo "💼 Building Release";
 swift build -c release
-if [[ $? != 0 ]]; 
-then 
+if [[ $? != 0 ]];
+then
     echo "❌  Build for release failed";
-    exit 1; 
+    exit 1;
 fi
 
 echo "🔎 Testing";
 
 swift test
-if [[ $? != 0 ]]; 
-then 
+if [[ $? != 0 ]];
+then
     echo "❌ Tests failed";
-    exit 1; 
+    exit 1;
 fi
 
 echo "✅ Done"

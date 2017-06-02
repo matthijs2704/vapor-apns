@@ -8,79 +8,95 @@
 
 import Foundation
 import XCTest
+import JSON
 @testable import class VaporAPNS.Payload
 
-class PayloadTests: XCTestCase { // TODO: Set this up so others can test this 😉
-    
-    override func setUp() {
-//        print ("Hi")
-    }
+class PayloadTests: XCTestCase {
     
     func testInitializer() throws {
     }
     
     func testSimplePush() throws {
-        let expectedJSON = "{\"aps\":{\"alert\":{\"body\":\"Test\"}}}"
+        let expectedJSON = Node(node: .object(["aps": .object(["alert": .object(["body": .string("Test")])])]), in: nil)
         
-        let payload = Payload.init(message: "Test")
-        let plJosn = try payload.makeJSON()
-        let plString = try plJosn.toString()
+        let payload = Payload(message: "Test")
+        let plJSON = try payload.makeJSON()
+        let plNode = plJSON.makeNode(in: nil)
         
-        XCTAssertEqual(plString, expectedJSON)
+        XCTAssertNotNil(plNode["aps"]?["alert"]?["body"]?.string)
+        XCTAssertEqual(plNode["aps"]?["alert"]?["body"]?.string, expectedJSON["aps"]?["alert"]?["body"]?.string)
     }
 
     func testTitleBodyPush() throws {
-        let expectedJSON = "{\"aps\":{\"alert\":{\"body\":\"Test body\",\"title\":\"Test title\"}}}"
+        let expectedJSON = Node(node: .object(["aps": .object(["alert": .object(["body": .string("Test body"), "title": .string("Test title")])])]), in: nil)
         
         let payload = Payload.init(title: "Test title", body: "Test body")
-        let plJosn = try payload.makeJSON()
-        let plString = try plJosn.toString()
+        let plJSON = try payload.makeJSON()
+        let plNode = plJSON.makeNode(in: nil)
         
-        XCTAssertEqual(plString, expectedJSON)
+        XCTAssertNotNil(plNode["aps"]?["alert"]?["body"]?.string)
+        XCTAssertEqual(plNode["aps"]?["alert"]?["body"]?.string, expectedJSON["aps"]?["alert"]?["body"]?.string)
+        XCTAssertNotNil(plNode["aps"]?["alert"]?["title"]?.string)
+        XCTAssertEqual(plNode["aps"]?["alert"]?["title"]?.string, expectedJSON["aps"]?["alert"]?["title"]?.string)
     }
     
     func testTitleBodyBadgePush() throws {
-        let expectedJSON = "{\"aps\":{\"alert\":{\"body\":\"Test body\",\"title\":\"Test title\"},\"badge\":10}}"
+        let expectedJSON = Node(node: .object(["aps": .object(["alert": .object(["body": .string("Test body"), "title": .string("Test title")]), "badge": .number(.int(10))])]), in: nil)
         
         let payload = Payload.init(title: "Test title", body: "Test body", badge: 10)
-        let plJosn = try payload.makeJSON()
-        let plString = try plJosn.toString()
+        let plJSON = try payload.makeJSON()
+        let plNode = plJSON.makeNode(in: nil)
         
-        XCTAssertEqual(plString, expectedJSON)
+        XCTAssertNotNil(plNode["aps"]?["alert"]?["body"]?.string)
+        XCTAssertEqual(plNode["aps"]?["alert"]?["body"]?.string, expectedJSON["aps"]?["alert"]?["body"]?.string)
+        XCTAssertNotNil(plNode["aps"]?["alert"]?["title"]?.string)
+        XCTAssertEqual(plNode["aps"]?["alert"]?["title"]?.string, expectedJSON["aps"]?["alert"]?["title"]?.string)
+        XCTAssertNotNil(plNode["aps"]?["badge"]?.int)
+        XCTAssertEqual(plNode["aps"]?["badge"]?.int, expectedJSON["aps"]?["badge"]?.int)
     }
 
     func testTitleSubtitleBodyPush() throws {
-        let expectedJSON = "{\"aps\":{\"alert\":{\"body\":\"Test body\",\"subtitle\":\"Test subtitle\",\"title\":\"Test title\"}}}"
+        let expectedJSON = Node(node: .object(["aps": .object(["alert": .object(["body": .string("Test body"), "title": .string("Test title"), "subtitle": .string("Test subtitle")])])]), in: nil)
 
         let payload = Payload.init(title: "Test title", body: "Test body")
         payload.subtitle = "Test subtitle"
-        let plJosn = try payload.makeJSON()
-        let plString = try plJosn.toString()
+        let plJSON = try payload.makeJSON()
+        let plNode = plJSON.makeNode(in: nil)
 
-        XCTAssertEqual(plString, expectedJSON)
+        XCTAssertNotNil(plNode["aps"]?["alert"]?["body"]?.string)
+        XCTAssertEqual(plNode["aps"]?["alert"]?["body"]?.string, expectedJSON["aps"]?["alert"]?["body"]?.string)
+        XCTAssertNotNil(plNode["aps"]?["alert"]?["title"]?.string)
+        XCTAssertEqual(plNode["aps"]?["alert"]?["title"]?.string, expectedJSON["aps"]?["alert"]?["title"]?.string)
+        XCTAssertNotNil(plNode["aps"]?["alert"]?["subtitle"]?.string)
+        XCTAssertEqual(plNode["aps"]?["alert"]?["subtitle"]?.string, expectedJSON["aps"]?["alert"]?["subtitle"]?.string)
     }
 
     func testContentAvailablePush() throws {
-        let expectedJSON = "{\"aps\":{\"content-available\":true}}"
+        let expectedJSON = Node(node: .object(["aps": .object(["content-available": .bool(true)])]), in: nil)
         
         let payload = Payload.contentAvailable
-        let plJosn = try payload.makeJSON()
-        let plString = try plJosn.toString()
+        let plJSON = try payload.makeJSON()
+        let plNode = plJSON.makeNode(in: nil)
         
-        XCTAssertEqual(plString, expectedJSON)
+        XCTAssertNotNil(plNode["aps"]?["content-available"]?.bool)
+        XCTAssertEqual(plNode["aps"]?["content-available"]?.bool, expectedJSON["aps"]?["content-available"]?.bool)
     }
     
     func testContentAvailableWithExtrasPush() throws {
-        let expectedJSON = "{\"IntKey\":101,\"StringKey\":\"StringExtra1\",\"aps\":{\"content-available\":true}}"
-        let linuxExpectedJSON = "{\"aps\":{\"content-available\":true},\"IntKey\":101,\"StringKey\":\"StringExtra1\"}"
+        let expectedJSON = Node(node: .object(["aps": .object(["content-available": .bool(true)]), "IntKey": .number(.int(101)), "StringKey": .string("StringExtra1")]), in: nil)
         
         let payload = Payload.contentAvailable
         payload.extra["StringKey"] = "StringExtra1"
         payload.extra["IntKey"] = 101
-        let plJosn = try payload.makeJSON()
-        let plString = try plJosn.toString()
+        let plJSON = try payload.makeJSON()
+        let plNode = plJSON.makeNode(in: nil)
         
-        XCTAssertTrue(plString == expectedJSON || plString == linuxExpectedJSON)
+        XCTAssertNotNil(plNode["aps"]?["content-available"]?.bool)
+        XCTAssertEqual(plNode["aps"]?["content-available"]?.bool, expectedJSON["aps"]?["content-available"]?.bool)
+        XCTAssertNotNil(plNode["StringKey"]?.string)
+        XCTAssertEqual(plNode["StringKey"]?.string, expectedJSON["StringKey"]?.string)
+        XCTAssertNotNil(plNode["IntKey"]?.int)
+        XCTAssertEqual(plNode["IntKey"]?.int, expectedJSON["IntKey"]?.int)
     }
     
     static var allTests : [(String, (PayloadTests) -> () throws -> Void)] {

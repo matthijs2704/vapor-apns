@@ -3,7 +3,6 @@ import SwiftString
 import JSON
 import CCurl
 import JSON
-import Jay
 import JWT
 import Console
 
@@ -19,7 +18,7 @@ open class VaporAPNS {
             if options.forceCurlInstall {
                 let curlupdater = CurlUpdater()
                 curlupdater.updateCurl()
-            }else {
+            } else {
                 let curlVersionChecker = CurlVersionHelper()
                 curlVersionChecker.checkVersion()
             }
@@ -72,11 +71,12 @@ open class VaporAPNS {
         var curlHeaders: UnsafeMutablePointer<curl_slist>?
         if !options.usesCertificateAuthentication {
             let privateKey = options.privateKey!.bytes.base64Decoded
-
+            let claims: [Claim] = [
+                IssuerClaim(string: options.teamId!),
+                IssuedAtClaim()
+            ]
             let jwt = try! JWT(additionalHeaders: [KeyID(options.keyId!)],
-                               payload: Node([IssuerClaim(options.teamId!),
-                                         IssuedAtClaim()]),
-                               encoding: Base64URLEncoding(),
+                               payload: JSON(claims),
                                signer: ES256(key: privateKey))
 
             let tokenString = try! jwt.createToken()
@@ -84,7 +84,7 @@ open class VaporAPNS {
             let publicKey = options.publicKey!.bytes.base64Decoded
             
             do {
-                let jwt2 = try JWT(token: tokenString, encoding: Base64URLEncoding())
+                let jwt2 = try JWT(token: tokenString)
                 do {
                     try jwt2.verifySignature(using: ES256(key: publicKey))
                 } catch {
@@ -140,15 +140,13 @@ open class VaporAPNS {
             
             if responseData != "" {
                 // Get JSON from loaded data string
-                let json = try! Jay.init(formatting: .minified).jsonFromData(try! responseData.makeBytes())
-                
-                if (json.dictionary?.keys.contains("reason"))! {
-                    result = Result.error(apnsId: message.messageId, deviceToken: deviceToken, error: APNSError.init(errorReason: json.dictionary!["reason"]!.string!))
-                }else {
+                let jsonNode = JSON(.bytes(responseData.makeBytes()), in: nil).makeNode(in: nil)
+                if let reason = jsonNode["reason"]?.string {
+                    result = Result.error(apnsId: message.messageId, deviceToken: deviceToken, error: APNSError.init(errorReason: reason))
+                } else {
                     result = Result.success(apnsId: message.messageId, deviceToken: deviceToken, serviceStatus: .success)
                 }
-                
-            }else {
+            } else {
                 result = Result.success(apnsId: message.messageId, deviceToken: deviceToken, serviceStatus: .success)
             }
             
@@ -166,7 +164,6 @@ open class VaporAPNS {
             
             // todo: Better unknown error handling?
             return Result.networkError(error: SimpleError.string(message: errorString))
-            
         }
     }
     
