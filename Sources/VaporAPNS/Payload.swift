@@ -68,66 +68,64 @@ open class Payload: JSONRepresentable {
         
         if contentAvailable {
             apsPayloadData["content-available"] = true
+        }
+            
+        // Create alert dictionary
+        var alert: [String: NodeRepresentable] = [:]
+        
+        if let title = title {
+            alert["title"] = title
+        }
+        
+        if let titleLocKey = titleLocKey {
+            alert["title-loc-key"] = titleLocKey
+            
+            if let titleLocArgs = titleLocArgs {
+                alert["title-loc-args"] = try titleLocArgs.makeNode(in: nil)
+            }
+        }
+        
+        if let subtitle = subtitle {
+            alert["subtitle"] = subtitle
+        }
+        
+        if let body = body {
+            alert["body"] = body
         } else {
-            
-            // Create alert dictionary
-            var alert: [String: NodeRepresentable] = [:]
-            
-            if let title = title {
-                alert["title"] = title
-            }
-            
-            if let titleLocKey = titleLocKey {
-                alert["title-loc-key"] = titleLocKey
+            if let bodyLocKey = bodyLocKey {
+                alert["loc-key"] = bodyLocKey
                 
-                if let titleLocArgs = titleLocArgs {
-                    alert["title-loc-args"] = try titleLocArgs.makeNode(in: nil)
+                if let bodyLocArgs = bodyLocArgs {
+                    alert["loc-args"] = try bodyLocArgs.makeNode(in: nil)
                 }
             }
-            
-            if let subtitle = subtitle {
-                alert["subtitle"] = subtitle
-            }
-            
-            if let body = body {
-                alert["body"] = body
-            } else {
-                if let bodyLocKey = bodyLocKey {
-                    alert["loc-key"] = bodyLocKey
-                    
-                    if let bodyLocArgs = bodyLocArgs {
-                        alert["loc-args"] = try bodyLocArgs.makeNode(in: nil)
-                    }
-                }
-            }
-            
-            if let actionLocKey = actionLocKey {
-                alert["action-loc-key"] = actionLocKey
-            }
-            
-            if let launchImage = launchImage {
-                alert["launch-image"] = launchImage
-            }
-            // Alert dictionary created
-            
-            apsPayloadData["alert"] = try alert.makeNode(in: nil)
-            
-            if let badge = badge {
-                apsPayloadData["badge"] = badge
-            }
-            
-            if let sound = sound {
-                apsPayloadData["sound"] = sound
-            }
-            
-            if let category = category {
-                apsPayloadData["category"] = category
-            }
-            
-            if hasMutableContent {
-                apsPayloadData["mutable-content"] = 1
-            }
-            
+        }
+        
+        if let actionLocKey = actionLocKey {
+            alert["action-loc-key"] = actionLocKey
+        }
+        
+        if let launchImage = launchImage {
+            alert["launch-image"] = launchImage
+        }
+        // Alert dictionary created
+        
+        apsPayloadData["alert"] = try alert.makeNode(in: nil)
+        
+        if let badge = badge {
+            apsPayloadData["badge"] = badge
+        }
+        
+        if let sound = sound {
+            apsPayloadData["sound"] = sound
+        }
+        
+        if let category = category {
+            apsPayloadData["category"] = category
+        }
+        
+        if hasMutableContent {
+            apsPayloadData["mutable-content"] = 1
         }
         
         payloadData["aps"] = try apsPayloadData.makeNode(in: nil)
