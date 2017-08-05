@@ -72,12 +72,15 @@ class PayloadTests: XCTestCase {
     }
 
     func testContentAvailablePush() throws {
-        let expectedJSON = Node(node: .object(["aps": .object(["content-available": .bool(true)])]), in: nil)
+        let expectedJSON = Node(node: .object(["aps": .object(["alert": .object(["body": .string("Test body")]), "content-available": .bool(true)])]), in: nil)
         
         let payload = Payload.contentAvailable
+        payload.body = "Test body"
         let plJSON = try payload.makeJSON()
         let plNode = plJSON.makeNode(in: nil)
-        
+
+        XCTAssertNotNil(plNode["aps"]?["alert"]?["body"]?.string)
+        XCTAssertEqual(plNode["aps"]?["alert"]?["body"]?.string, expectedJSON["aps"]?["alert"]?["body"]?.string)
         XCTAssertNotNil(plNode["aps"]?["content-available"]?.bool)
         XCTAssertEqual(plNode["aps"]?["content-available"]?.bool, expectedJSON["aps"]?["content-available"]?.bool)
     }
