@@ -18,8 +18,6 @@ public struct ApplePushMessage {
     
     public let collapseIdentifier: String?
 
-    public let threadIdentifier: String?
-
     public let expirationDate: Date?
     
     /// APNS Priority
@@ -40,14 +38,13 @@ public struct ApplePushMessage {
     /// Use sandbox server URL or not
     public let sandbox:Bool
     
-    public init(topic: String? = nil, priority: Priority, expirationDate: Date? = nil, payload: Payload, sandbox:Bool = true, collapseIdentifier: String? = nil, threadIdentifier: String? = nil) {
+    public init(topic: String? = nil, priority: Priority, expirationDate: Date? = nil, payload: Payload, sandbox:Bool = true, collapseIdentifier: String? = nil) {
         self.topic = topic
         self.priority = priority
         self.expirationDate = expirationDate
         self.payload = payload
         self.sandbox = sandbox
         self.collapseIdentifier = collapseIdentifier
-        self.threadIdentifier = threadIdentifier
     }
     
 }

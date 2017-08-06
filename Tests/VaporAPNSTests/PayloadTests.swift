@@ -71,6 +71,20 @@ class PayloadTests: XCTestCase {
         XCTAssertEqual(plNode["aps"]?["alert"]?["subtitle"]?.string, expectedJSON["aps"]?["alert"]?["subtitle"]?.string)
     }
 
+    func testSimpleWithThreadIdPush() throws {
+        let expectedJSON = Node(node: .object(["aps": .object(["alert": .object(["body": .string("Test")]), "thread-id": .string("Test Thread Id")])]), in: nil)
+
+        let payload = Payload(message: "Test")
+        payload.threadId = "Test Thread Id"
+        let plJSON = try payload.makeJSON()
+        let plNode = plJSON.makeNode(in: nil)
+
+        XCTAssertNotNil(plNode["aps"]?["alert"]?["body"]?.string)
+        XCTAssertEqual(plNode["aps"]?["alert"]?["body"]?.string, expectedJSON["aps"]?["alert"]?["body"]?.string)
+        XCTAssertNotNil(plNode["aps"]?["thread-id"]?.string)
+        XCTAssertEqual(plNode["aps"]?["thread-id"]?.string, expectedJSON["aps"]?["thread-id"]?.string)
+    }
+
     func testContentAvailablePush() throws {
         let expectedJSON = Node(node: .object(["aps": .object(["content-available": .bool(true)])]), in: nil)
         
@@ -104,6 +118,7 @@ class PayloadTests: XCTestCase {
             ("testSimplePush", testSimplePush),
             ("testTitleBodyPush", testTitleBodyPush),
             ("testTitleBodyBadgePush", testTitleBodyBadgePush),
+            ("testSimpleWithThreadIdPush", testSimpleWithThreadIdPush),
             ("testContentAvailablePush", testContentAvailablePush),
             ("testContentAvailableWithExtrasPush", testContentAvailableWithExtrasPush),
         ]

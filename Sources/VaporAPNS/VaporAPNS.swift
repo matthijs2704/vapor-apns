@@ -193,10 +193,6 @@ open class VaporAPNS {
             headers["apns-collapse-id"] = collapseId
         }
         
-        if let threadId = message.threadIdentifier {
-            headers["thread-id"] = threadId
-        }
-        
         return headers
         
     }
