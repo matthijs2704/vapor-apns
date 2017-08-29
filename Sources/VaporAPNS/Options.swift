@@ -12,7 +12,7 @@ import Node
 /// Specific configuration options to be passed to `VaporAPNS`
 public struct Options: CustomStringConvertible, NodeInitializable {
     public enum Port: Int {
-        case p443 = 443, p2197 = 2197
+        case p443 = 443, p2197 = 2197, p2195 = 2195
     }
     
     public var topic: String
