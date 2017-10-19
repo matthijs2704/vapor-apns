@@ -149,11 +149,15 @@ open class VaporAPNS {
             
             if responseData != "" {
                 // Get JSON from loaded data string
-                let jsonNode = JSON(.bytes(responseData.makeBytes()), in: nil).makeNode(in: nil)
-                if let reason = jsonNode["reason"]?.string {
-                    result = Result.error(apnsId: message.messageId, deviceToken: deviceToken, error: APNSError.init(errorReason: reason))
-                } else {
-                    result = Result.success(apnsId: message.messageId, deviceToken: deviceToken, serviceStatus: .success)
+                do {
+                    let jsonNode = try JSON(bytes: responseData.makeBytes()).makeNode(in: nil)
+                    if let reason = jsonNode["reason"]?.string {
+                        result = Result.error(apnsId: message.messageId, deviceToken: deviceToken, error: APNSError.init(errorReason: reason))
+                    } else {
+                        result = Result.success(apnsId: message.messageId, deviceToken: deviceToken, serviceStatus: .success)
+                    }
+                } catch let e {
+                    result = Result.error(apnsId: message.messageId, deviceToken: deviceToken, error: APNSError.init(errorReason: e.localizedDescription))
                 }
             } else {
                 result = Result.success(apnsId: message.messageId, deviceToken: deviceToken, serviceStatus: .success)
