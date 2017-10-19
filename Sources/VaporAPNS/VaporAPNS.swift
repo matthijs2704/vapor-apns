@@ -8,6 +8,7 @@ import Console
 
 open class VaporAPNS {
     fileprivate var options: Options
+    private var lastGeneratedToken: (date: Date, token: String)?
     
     fileprivate var curlHandle: UnsafeMutableRawPointer
     
@@ -70,36 +71,44 @@ open class VaporAPNS {
         let headers = self.requestHeaders(for: message)
         var curlHeaders: UnsafeMutablePointer<curl_slist>?
         if !options.usesCertificateAuthentication {
-            let privateKey = options.privateKey!.bytes.base64Decoded
-            let claims: [Claim] = [
-                IssuerClaim(string: options.teamId!),
-                IssuedAtClaim()
-            ]
-            let jwt = try! JWT(additionalHeaders: [KeyID(options.keyId!)],
-                               payload: JSON(claims),
-                               signer: ES256(key: privateKey))
-
-            let tokenString = try! jwt.createToken()
-
-            let publicKey = options.publicKey!.bytes.base64Decoded
-            
-            do {
-                let jwt2 = try JWT(token: tokenString)
+            let token: String
+            if let recentToken = lastGeneratedToken, abs(recentToken.date.timeIntervalSinceNow) < 59 * 60 {
+                token = recentToken.token
+            } else {
+                let privateKey = options.privateKey!.bytes.base64Decoded
+                let claims: [Claim] = [
+                    IssuerClaim(string: options.teamId!),
+                    IssuedAtClaim()
+                ]
+                let jwt = try! JWT(additionalHeaders: [KeyID(options.keyId!)],
+                                   payload: JSON(claims),
+                                   signer: ES256(key: privateKey))
+                
+                let tokenString = try! jwt.createToken()
+                
+                let publicKey = options.publicKey!.bytes.base64Decoded
+                
                 do {
-                    try jwt2.verifySignature(using: ES256(key: publicKey))
+                    let jwt2 = try JWT(token: tokenString)
+                    do {
+                        try jwt2.verifySignature(using: ES256(key: publicKey))
+                    } catch {
+                        // If we fail here, its an invalid signature
+                        //                    return Result.error(apnsId: message.messageId, deviceToken: deviceToken, error: .invalidSignature)
+                    }
+                    
                 } catch {
-                    // If we fail here, its an invalid signature
-//                    return Result.error(apnsId: message.messageId, deviceToken: deviceToken, error: .invalidSignature)
+                    print ("Couldn't verify token. This is a non-fatal error, we'll try to send the notification anyway.")
+                    if options.debugLogging {
+                        print("\(error)")
+                    }
                 }
                 
-            } catch {
-                print ("Couldn't verify token. This is a non-fatal error, we'll try to send the notification anyway.")
-                if options.debugLogging {
-                    print("\(error)")
-                }
+                token = tokenString.replacingOccurrences(of: " ", with: "")
+                lastGeneratedToken = (date: Date(), token: token)
             }
-            
-            curlHeaders = curl_slist_append(curlHeaders, "Authorization: bearer \(tokenString.replacingOccurrences(of: " ", with: ""))")
+          
+            curlHeaders = curl_slist_append(curlHeaders, "Authorization: bearer \(token)")
         }
         curlHeaders = curl_slist_append(curlHeaders, "User-Agent: VaporAPNS/1.0.1")
         for header in headers {
