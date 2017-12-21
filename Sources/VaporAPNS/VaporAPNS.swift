@@ -40,8 +40,9 @@ open class VaporAPNS {
         curlHelperSetOptInt(curlHandle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2_0)
     }
     
-    open func send(_ message: ApplePushMessage, to deviceToken: String) -> Result {
-        // Set URL
+    private func configureCurlHandle(for message: ApplePushMessage, to deviceToken: String) -> (handle: UnsafeMutableRawPointer,
+                                                                                                writeStorage: WriteStorage)? {
+        guard var handle = curl_easy_init() else { return nil }
         let url = ("\(self.hostURL(message.sandbox))/3/device/\(deviceToken)")
         curlHelperSetOptString(curlHandle, CURLOPT_URL, url)
         
@@ -55,10 +56,8 @@ open class VaporAPNS {
         curlHelperSetOptBool(curlHandle, CURLOPT_POST, CURL_TRUE)
         
         // setup payload
-        // TODO: Message payload
-        
         var postFieldsString = toNullTerminatedUtf8String(try! message.payload.makeJSON().serialize(prettyPrint: false))!
-
+        
         postFieldsString.withUnsafeMutableBytes() { (t: UnsafeMutablePointer<Int8>) -> Void in
             curlHelperSetOptString(curlHandle, CURLOPT_POSTFIELDS, t)
         }
@@ -107,7 +106,7 @@ open class VaporAPNS {
                 token = tokenString.replacingOccurrences(of: " ", with: "")
                 lastGeneratedToken = (date: Date(), token: token)
             }
-          
+            
             curlHeaders = curl_slist_append(curlHeaders, "Authorization: bearer \(token)")
         }
         curlHeaders = curl_slist_append(curlHeaders, "User-Agent: VaporAPNS/1.0.1")
@@ -118,7 +117,6 @@ open class VaporAPNS {
         curlHeaders = curl_slist_append(curlHeaders, "Content-Type: application/json");
         curlHelperSetOptList(curlHandle, CURLOPT_HTTPHEADER, curlHeaders)
         
-        // Get response
         var writeStorage = WriteStorage()
         curlHelperSetOptWriteFunc(curlHandle, &writeStorage) { (ptr, size, nMemb, privateData) -> Int in
             let storage = privateData?.assumingMemoryBound(to: WriteStorage.self)
@@ -133,8 +131,19 @@ open class VaporAPNS {
             return realsize
         }
         
+        return (handle, writeStorage)
+    }
+    
+    open func send(_ message: ApplePushMessage, to deviceToken: String, completionHandler: @escaping (Result) -> Void) {
+        guard let handle = configureCurlHandle(for: message, to: deviceToken) else {
+            // TODO: call completion handler
+            return
+        }
+        let curlHandle = handle.handle
+        let writeStorage = handle.writeStorage
+        
         let ret = curl_easy_perform(curlHandle)
-                
+        
         if ret == CURLE_OK {
             // Create string from Data
             let str = String.init(data: writeStorage.data, encoding: .utf8)!
@@ -176,15 +185,13 @@ open class VaporAPNS {
         }
     }
     
-    open func send(_ message: ApplePushMessage, to deviceTokens: [String], perDeviceResultHandler: ((_ result: Result) -> Void)) {
+    open func send(_ message: ApplePushMessage, to deviceTokens: [String], perDeviceResultHandler: @escaping ((_ result: Result) -> Void)) {
         for deviceToken in deviceTokens {
-            let result = self.send(message, to: deviceToken)
-            perDeviceResultHandler(result)
+            let result = self.send(message, to: deviceToken, completionHandler: perDeviceResultHandler)
         }
     }
     
     open func toNullTerminatedUtf8String(_ str: [UTF8.CodeUnit]) -> Data? {
-//        let cString = str.cString(using: String.Encoding.utf8)
         return str.withUnsafeBufferPointer() { buffer -> Data? in
             return buffer.baseAddress != nil ? Data(bytes: buffer.baseAddress!, count: buffer.count) : nil
         }
