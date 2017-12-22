@@ -6,13 +6,16 @@ import JSON
 import JWT
 import Console
 
+
 open class VaporAPNS {
+    
     fileprivate var options: Options
     private var lastGeneratedToken: (date: Date, token: String)?
     
     fileprivate var curlHandle: UnsafeMutableRawPointer
     
     public init(options: Options) throws {
+        
         self.options = options
         
         if !options.disableCurlCheck {
@@ -25,46 +28,54 @@ open class VaporAPNS {
             }
         }
         
+        self.curlHandle = curl_multi_init()
         
-        self.curlHandle = curl_easy_init()
-    
-        curlHelperSetOptBool(curlHandle, CURLOPT_VERBOSE, options.debugLogging ? CURL_TRUE : CURL_FALSE)
-
-        if self.options.usesCertificateAuthentication {
-            curlHelperSetOptString(curlHandle, CURLOPT_SSLCERT, options.certPath)
-            curlHelperSetOptString(curlHandle, CURLOPT_SSLCERTTYPE, "PEM")
-            curlHelperSetOptString(curlHandle, CURLOPT_SSLKEY, options.keyPath)
-            curlHelperSetOptString(curlHandle, CURLOPT_SSLKEYTYPE, "PEM")
-        }
-        
-        curlHelperSetOptInt(curlHandle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2_0)
     }
     
-    private func configureCurlHandle(for message: ApplePushMessage, to deviceToken: String) -> (handle: UnsafeMutableRawPointer,
-                                                                                                writeStorage: WriteStorage)? {
-        guard var handle = curl_easy_init() else { return nil }
+    // MARK: CURL Config
+    
+    private func configureCurlHandle(for message: ApplePushMessage,
+                                     to deviceToken: String,
+                                     completionHandler: @escaping (Result) -> Void) -> Connection? {
+        guard let handle = curl_easy_init() else { return nil }
+        
+        curlHelperSetOptBool(handle, CURLOPT_VERBOSE, options.debugLogging ? CURL_TRUE : CURL_FALSE)
+        
+        if self.options.usesCertificateAuthentication {
+            curlHelperSetOptString(handle, CURLOPT_SSLCERT, options.certPath)
+            curlHelperSetOptString(handle, CURLOPT_SSLCERTTYPE, "PEM")
+            curlHelperSetOptString(handle, CURLOPT_SSLKEY, options.keyPath)
+            curlHelperSetOptString(handle, CURLOPT_SSLKEYTYPE, "PEM")
+        }
+        
+        curlHelperSetOptInt(handle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2_0)
+        
         let url = ("\(self.hostURL(message.sandbox))/3/device/\(deviceToken)")
-        curlHelperSetOptString(curlHandle, CURLOPT_URL, url)
+        curlHelperSetOptString(handle, CURLOPT_URL, url)
         
         // force set port to 443
-        curlHelperSetOptInt(curlHandle, CURLOPT_PORT, options.port.rawValue)
+        curlHelperSetOptInt(handle, CURLOPT_PORT, options.port.rawValue)
         
         // Follow location
-        curlHelperSetOptBool(curlHandle, CURLOPT_FOLLOWLOCATION, CURL_TRUE)
+        curlHelperSetOptBool(handle, CURLOPT_FOLLOWLOCATION, CURL_TRUE)
         
         // set POST request
-        curlHelperSetOptBool(curlHandle, CURLOPT_POST, CURL_TRUE)
+        curlHelperSetOptBool(handle, CURLOPT_POST, CURL_TRUE)
+        
+        // Pipeline
+        //        curlHelperSetOptInt(handle, CURLOPT_PIPEWAIT, 1)
+        //        curlHelperSetOptInt(handle, CURLMOPT_PIPELINING, CURLPIPE_MULTIPLEX | CURLPIPE_HTTP1)
         
         // setup payload
         var postFieldsString = toNullTerminatedUtf8String(try! message.payload.makeJSON().serialize(prettyPrint: false))!
         
         postFieldsString.withUnsafeMutableBytes() { (t: UnsafeMutablePointer<Int8>) -> Void in
-            curlHelperSetOptString(curlHandle, CURLOPT_POSTFIELDS, t)
+            curlHelperSetOptString(handle, CURLOPT_POSTFIELDS, t)
         }
-        curlHelperSetOptInt(curlHandle, CURLOPT_POSTFIELDSIZE, postFieldsString.count)
-
+        curlHelperSetOptInt(handle, CURLOPT_POSTFIELDSIZE, postFieldsString.count)
+        
         // Tell CURL to add headers
-        curlHelperSetOptBool(curlHandle, CURLOPT_HEADER, CURL_TRUE)
+        curlHelperSetOptBool(handle, CURLOPT_HEADER, CURL_TRUE)
         
         //Headers
         let headers = self.requestHeaders(for: message)
@@ -115,89 +126,15 @@ open class VaporAPNS {
         }
         curlHeaders = curl_slist_append(curlHeaders, "Accept: application/json")
         curlHeaders = curl_slist_append(curlHeaders, "Content-Type: application/json");
-        curlHelperSetOptList(curlHandle, CURLOPT_HTTPHEADER, curlHeaders)
+        curlHelperSetOptList(handle, CURLOPT_HTTPHEADER, curlHeaders)
         
-        var writeStorage = WriteStorage()
-        curlHelperSetOptWriteFunc(curlHandle, &writeStorage) { (ptr, size, nMemb, privateData) -> Int in
-            let storage = privateData?.assumingMemoryBound(to: WriteStorage.self)
-            let realsize = size * nMemb
-            
-            var bytes: [UInt8] = [UInt8](repeating: 0, count: realsize)
-            memcpy(&bytes, ptr!, realsize)
-            
-            for byte in bytes {
-                storage?.pointee.data.append(byte)
-            }
-            return realsize
-        }
-        
-        return (handle, writeStorage)
+        return Connection(handle: handle,
+                          message: message,
+                          token: deviceToken,
+                          completionHandler: completionHandler)
     }
     
-    open func send(_ message: ApplePushMessage, to deviceToken: String, completionHandler: @escaping (Result) -> Void) {
-        guard let handle = configureCurlHandle(for: message, to: deviceToken) else {
-            // TODO: call completion handler
-            return
-        }
-        let curlHandle = handle.handle
-        let writeStorage = handle.writeStorage
-        
-        let ret = curl_easy_perform(curlHandle)
-        
-        if ret == CURLE_OK {
-            // Create string from Data
-            let str = String.init(data: writeStorage.data, encoding: .utf8)!
-            
-            // Split into two pieces by '\r\n\r\n' as the response has two newlines before the returned data. This causes us to have two pieces, the headers/crap and the server returned data
-            let splittedString = str.components(separatedBy: "\r\n\r\n")
-            
-            let result: Result!
-            
-            // Ditch the first part and only get the useful data part
-            let responseData = splittedString[1]
-            
-            if responseData != "" {
-                // Get JSON from loaded data string
-                let jsonNode = JSON(.bytes(responseData.makeBytes()), in: nil).makeNode(in: nil)
-                if let reason = jsonNode["reason"]?.string {
-                    result = Result.error(apnsId: message.messageId, deviceToken: deviceToken, error: APNSError.init(errorReason: reason))
-                } else {
-                    result = Result.success(apnsId: message.messageId, deviceToken: deviceToken, serviceStatus: .success)
-                }
-            } else {
-                result = Result.success(apnsId: message.messageId, deviceToken: deviceToken, serviceStatus: .success)
-            }
-            
-            // Do some cleanup
-//            curl_easy_cleanup(curlHandle)
-            curl_slist_free_all(curlHeaders!)
-            
-            return result
-        } else {
-            let error = curl_easy_strerror(ret)
-            let errorString = String(utf8String: error!)!
-            
-//            curl_easy_cleanup(curlHandle)
-            curl_slist_free_all(curlHeaders!)
-            
-            // todo: Better unknown error handling?
-            return Result.networkError(error: SimpleError.string(message: errorString))
-        }
-    }
-    
-    open func send(_ message: ApplePushMessage, to deviceTokens: [String], perDeviceResultHandler: @escaping ((_ result: Result) -> Void)) {
-        for deviceToken in deviceTokens {
-            let result = self.send(message, to: deviceToken, completionHandler: perDeviceResultHandler)
-        }
-    }
-    
-    open func toNullTerminatedUtf8String(_ str: [UTF8.CodeUnit]) -> Data? {
-        return str.withUnsafeBufferPointer() { buffer -> Data? in
-            return buffer.baseAddress != nil ? Data(bytes: buffer.baseAddress!, count: buffer.count) : nil
-        }
-    }
-    
-    fileprivate func requestHeaders(for message: ApplePushMessage) -> [String: String] {
+    private func requestHeaders(for message: ApplePushMessage) -> [String: String] {
         var headers: [String : String] = [
             "apns-id": message.messageId,
             "apns-expiration": "\(Int(message.expirationDate?.timeIntervalSince1970.rounded() ?? 0))",
@@ -217,9 +154,223 @@ open class VaporAPNS {
         
     }
     
-    fileprivate class WriteStorage {
+    private class WriteStorage {
         var data = Data()
     }
+    
+    // MARK: Connections
+    
+    private let connectionQueue: DispatchQueue = DispatchQueue(label: "VaporAPNS.connection-managment")
+    
+    private class Connection: Equatable, Hashable {
+        private(set) var data: Data = Data()
+        let handle: UnsafeMutableRawPointer
+        let messageId: String
+        let token: String
+        let completionHandler: (Result) -> Void
+        
+        fileprivate func append(bytes: [UInt8]) {
+            data.append(contentsOf: bytes)
+        }
+        
+        init(handle: UnsafeMutableRawPointer, message: ApplePushMessage, token: String, completionHandler: @escaping (Result) -> Void) {
+            self.handle = handle
+            self.messageId = message.messageId
+            self.token = token
+            self.completionHandler = completionHandler
+        }
+        
+        var hashValue: Int { return messageId.hashValue }
+        
+        static func == (lhs: Connection, rhs: Connection) -> Bool { return lhs.messageId == rhs.messageId }
+    }
+    
+    private var connections: NSMutableSet = []
+    
+    private func complete(connection: Connection) {
+        connectionQueue.async {
+            guard self.connections.contains(connection) else { return }
+            self.connections.remove(connection)
+            curl_multi_remove_handle(self.curlHandle, connection.handle)
+            self.handleCompleted(connection: connection)
+        }
+    }
+    
+    private func handleCompleted(connection: Connection) {
+        // Create string from Data
+        let str = String.init(data: connection.data, encoding: .utf8)!
+        
+        // Split into two pieces by '\r\n\r\n' as the response has two newlines before the returned data. This causes us to have two pieces, the headers/crap and the server returned data
+        let splittedString = str.components(separatedBy: "\r\n\r\n")
+        
+        let result: Result!
+        
+        // Ditch the first part and only get the useful data part
+        let dataString: String?
+        if splittedString.count > 1 {
+            dataString = splittedString[1]
+        } else {
+            dataString = nil
+        }
+        
+        if let responseData = dataString,
+            responseData != "",
+            let data = responseData.data(using: .utf8),
+            let json = try? JSONSerialization.jsonObject(with: data, options: []),
+            let responseJSON = json as? [String: Any] {
+            
+            // Get JSON from loaded data string
+            if let reason = responseJSON["reason"] as? String {
+                result = Result.error(apnsId: connection.messageId,
+                                      deviceToken: connection.token,
+                                      error: APNSError.init(errorReason: reason))
+            } else {
+                result = Result.success(apnsId: connection.messageId,
+                                        deviceToken: connection.token,
+                                        serviceStatus: .success)
+            }
+        } else {
+            result = Result.success(apnsId: connection.messageId,
+                                    deviceToken: connection.token,
+                                    serviceStatus: .success)
+        }
+        
+        // Do some cleanup
+        curl_easy_cleanup(connection.handle)
+        //            curl_slist_free_all(curlHeaders!)
+        
+        connection.completionHandler(result)
+    }
+    
+    // MARK: Running cURL Multi
+    
+    private let performQueue: DispatchQueue = DispatchQueue(label: "VaporAPNS.curl_multi_perform")
+    
+    private var runningConnectionsCount: Int32 = 0
+    
+    private var repeats = 0
+    
+    /// Core cURL-multi Loop is done here
+    private func performActiveConnections() {
+        var runningCount: Int32 = 0
+        
+        var code: CURLMcode = CURLM_OK
+        code = curl_multi_perform(self.curlHandle, &runningCount)
+        
+        performQueue.async {
+            var numfds: Int32 = 0
+            
+            if code == CURLM_OK {
+                code = curl_multi_wait(self.curlHandle, nil, 0, 1000, &numfds);
+            }
+            if code != CURLM_OK {
+                print("curl_multi_wait failed with error code \(code)")
+                return
+            }
+            
+            if numfds != 0 {
+                self.repeats += 1
+            } else {
+                self.repeats = 0
+            }
+            
+            code = curl_multi_perform(self.curlHandle, &runningCount)
+            
+            if runningCount < self.runningConnectionsCount {
+                
+                var numMessages: Int32 = 0
+                var curlMessage: UnsafeMutablePointer<CURLMsg>?
+                
+                repeat {
+                    curlMessage = curl_multi_info_read(self.curlHandle, &numMessages)
+                    print("Got \(numMessages) curl messages")
+                    if let message = curlMessage {
+                        let handle = message.pointee.easy_handle
+                        let msg = message.pointee.msg
+                        
+                        if msg == CURLMSG_DONE {
+                            
+                            if let item = self.connections.first(where: { item in
+                                guard let connection = item as? Connection else { return false }
+                                return handle == connection.handle
+                            }),
+                                let connection = item as? Connection
+                            {
+                                self.complete(connection: connection)
+                            } else {
+                                print("Warning: Removing handle not in connection list")
+                                curl_multi_remove_handle(self.curlHandle, handle)
+                            }
+                            
+                        } else {
+                            print("MSG: \(msg.rawValue)")
+                        }
+                    }
+                    
+                } while curlMessage != nil
+            }
+            self.runningConnectionsCount = runningCount
+            
+            if self.runningConnectionsCount > 0 {
+                if self.repeats > 1 {
+                    self.performQueue.asyncAfter(deadline: DispatchTime.now() + 0.1) {
+                        self.performActiveConnections()
+                    }
+                } else {
+                    self.performActiveConnections()
+                }
+            }
+        }
+    }
+    
+    
+    // MARK: API
+    
+    open func send(_ message: ApplePushMessage, to deviceToken: String, completionHandler: @escaping (Result) -> Void) {
+        guard var connection = configureCurlHandle(for: message, to: deviceToken, completionHandler: completionHandler) else {
+            // TODO: call completion handler
+            return
+        }
+        
+        
+        connections.add(connection)
+        let ptr = Unmanaged<Connection>.passUnretained(connection).toOpaque()
+        print("Set up connection \(connection.messageId) \(ptr)")
+        let code =  curlHelperSetOptWriteFunc(connection.handle, ptr) { (ptr, size, nMemb, privateData) -> Int in
+            print("Take connection \(privateData!)")
+            let realsize = size * nMemb
+            
+            let pointee = Unmanaged<Connection>.fromOpaque(privateData!).takeUnretainedValue()
+            var bytes: [UInt8] = [UInt8](repeating: 0, count: realsize)
+            memcpy(&bytes, ptr!, realsize)
+            
+            
+            pointee.append(bytes: bytes)
+            return realsize
+            
+        }
+        print("code: \(code)")
+        
+        
+        curl_multi_add_handle(self.curlHandle, connection.handle)
+        self.performActiveConnections()
+        
+    }
+    
+    open func send(_ message: ApplePushMessage, to deviceTokens: [String], perDeviceResultHandler: @escaping ((_ result: Result) -> Void)) {
+        for deviceToken in deviceTokens {
+            self.send(message, to: deviceToken, completionHandler: perDeviceResultHandler)
+        }
+    }
+    
+    // MARK: Helpers
+    
+    private func toNullTerminatedUtf8String(_ str: [UTF8.CodeUnit]) -> Data? {
+        return str.withUnsafeBufferPointer() { buffer -> Data? in
+            return buffer.baseAddress != nil ? Data(bytes: buffer.baseAddress!, count: buffer.count) : nil
+        }
+    }
+    
 }
 
 extension VaporAPNS {
@@ -239,3 +390,4 @@ struct KeyID: Header {
         node = Node(keyID)
     }
 }
+
