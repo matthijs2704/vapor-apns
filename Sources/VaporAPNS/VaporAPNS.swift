@@ -295,12 +295,20 @@ open class VaporAPNS {
                         
                         if msg == CURLMSG_DONE {
                             
-                            if let item = self.connections.first(where: { item in
-                                guard let connection = item as? Connection else { return false }
-                                return handle == connection.handle
-                            }),
-                                let connection = item as? Connection
-                            {
+                            var doneConnection: Connection?
+                            self.connectionQueue.sync {
+                                if let item = self.connections.first(where: { item in
+                                    guard let connection = item as? Connection else { return false }
+                                    return handle == connection.handle
+                                }),
+                                    let connection = item as? Connection
+                                {
+                                    doneConnection = connection
+                                } else {
+                                    doneConnection = nil
+                                }
+                            }
+                            if let connection = doneConnection {
                                 self.complete(connection: connection)
                             } else {
                                 print("Warning: Removing handle not in connection list")
