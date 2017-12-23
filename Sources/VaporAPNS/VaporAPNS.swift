@@ -165,10 +165,6 @@ open class VaporAPNS {
         
     }
     
-    private class WriteStorage {
-        var data = Data()
-    }
-    
     // MARK: Connections
     
     private let connectionQueue: DispatchQueue = DispatchQueue(label: "VaporAPNS.connection-managment")
