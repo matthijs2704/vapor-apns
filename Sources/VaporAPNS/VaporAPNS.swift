@@ -12,11 +12,12 @@ open class VaporAPNS {
     fileprivate var options: Options
     private var lastGeneratedToken: (date: Date, token: String)?
     
-    fileprivate var curlHandle: UnsafeMutableRawPointer
+    fileprivate var curlHandle: UnsafeMutableRawPointer!
     
     public init(options: Options) throws {
         
         self.options = options
+        self.options.debugLogging = true
         
         if !options.disableCurlCheck {
             if options.forceCurlInstall {
@@ -28,11 +29,20 @@ open class VaporAPNS {
             }
         }
         
-        self.curlHandle = curl_multi_init()
-        
+        self.curlHandle = createCurlMultiHandle()
+    }
+    
+    deinit {
+        curl_multi_cleanup(self.curlHandle)
     }
     
     // MARK: CURL Config
+    
+    private func createCurlMultiHandle() -> UnsafeMutableRawPointer {
+        let curlHandle = curl_multi_init()
+        curlHelperSetMultiOpt(curlHandle, CURLMOPT_PIPELINING, CURLPIPE_MULTIPLEX)
+        return curlHandle!
+    }
     
     private func configureCurlHandle(for message: ApplePushMessage,
                                      to deviceToken: String,
@@ -63,16 +73,17 @@ open class VaporAPNS {
         curlHelperSetOptBool(handle, CURLOPT_POST, CURL_TRUE)
         
         // Pipeline
-        //        curlHelperSetOptInt(handle, CURLOPT_PIPEWAIT, 1)
-        //        curlHelperSetOptInt(handle, CURLMOPT_PIPELINING, CURLPIPE_MULTIPLEX | CURLPIPE_HTTP1)
+        curlHelperSetOptInt(handle, CURLOPT_PIPEWAIT, 1)
         
         // setup payload
-        var postFieldsString = toNullTerminatedUtf8String(try! message.payload.makeJSON().serialize(prettyPrint: false))!
         
-        postFieldsString.withUnsafeMutableBytes() { (t: UnsafeMutablePointer<Int8>) -> Void in
-            curlHelperSetOptString(handle, CURLOPT_POSTFIELDS, t)
-        }
-        curlHelperSetOptInt(handle, CURLOPT_POSTFIELDSIZE, postFieldsString.count)
+        // Use CURLOPT_COPYPOSTFIELDS so Swift can release str and let CURL take
+        // care of the rest. This implies we need to set CURLOPT_POSTFIELDSIZE
+        // first
+        let serialized = try! message.payload.makeJSON().serialize(prettyPrint: false)
+        let str = String(bytes: serialized)
+        curlHelperSetOptInt(handle, CURLOPT_POSTFIELDSIZE, str.utf8.count)
+        curlHelperSetOptString(handle, CURLOPT_COPYPOSTFIELDS, str.cString(using: .utf8))
         
         // Tell CURL to add headers
         curlHelperSetOptBool(handle, CURLOPT_HEADER, CURL_TRUE)
@@ -202,7 +213,6 @@ open class VaporAPNS {
         
         // Split into two pieces by '\r\n\r\n' as the response has two newlines before the returned data. This causes us to have two pieces, the headers/crap and the server returned data
         let splittedString = str.components(separatedBy: "\r\n\r\n")
-        
         let result: Result!
         
         // Ditch the first part and only get the useful data part
@@ -283,7 +293,6 @@ open class VaporAPNS {
                 
                 repeat {
                     curlMessage = curl_multi_info_read(self.curlHandle, &numMessages)
-                    print("Got \(numMessages) curl messages")
                     if let message = curlMessage {
                         let handle = message.pointee.easy_handle
                         let msg = message.pointee.msg
@@ -319,6 +328,9 @@ open class VaporAPNS {
                 } else {
                     self.performActiveConnections()
                 }
+            } else {
+                curl_multi_cleanup(self.curlHandle)
+                self.curlHandle = self.createCurlMultiHandle()
             }
         }
     }
@@ -327,34 +339,26 @@ open class VaporAPNS {
     // MARK: API
     
     open func send(_ message: ApplePushMessage, to deviceToken: String, completionHandler: @escaping (Result) -> Void) {
-        guard var connection = configureCurlHandle(for: message, to: deviceToken, completionHandler: completionHandler) else {
-            // TODO: call completion handler
+        guard let connection = configureCurlHandle(for: message, to: deviceToken, completionHandler: completionHandler) else {
+            completionHandler(Result.networkError(error: SimpleError.string(message: "Could not configure cURL")))
             return
         }
         
-        
         connections.add(connection)
         let ptr = Unmanaged<Connection>.passUnretained(connection).toOpaque()
-        print("Set up connection \(connection.messageId) \(ptr)")
-        let code =  curlHelperSetOptWriteFunc(connection.handle, ptr) { (ptr, size, nMemb, privateData) -> Int in
-            print("Take connection \(privateData!)")
+        let _ = curlHelperSetOptWriteFunc(connection.handle, ptr) { (ptr, size, nMemb, privateData) -> Int in
             let realsize = size * nMemb
             
             let pointee = Unmanaged<Connection>.fromOpaque(privateData!).takeUnretainedValue()
             var bytes: [UInt8] = [UInt8](repeating: 0, count: realsize)
             memcpy(&bytes, ptr!, realsize)
             
-            
             pointee.append(bytes: bytes)
             return realsize
-            
         }
-        print("code: \(code)")
-        
         
         curl_multi_add_handle(self.curlHandle, connection.handle)
         self.performActiveConnections()
-        
     }
     
     open func send(_ message: ApplePushMessage, to deviceTokens: [String], perDeviceResultHandler: @escaping ((_ result: Result) -> Void)) {
