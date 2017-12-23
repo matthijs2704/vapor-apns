@@ -340,21 +340,23 @@ open class VaporAPNS {
             return
         }
         
-        connections.add(connection)
-        let ptr = Unmanaged<Connection>.passUnretained(connection).toOpaque()
-        let _ = curlHelperSetOptWriteFunc(connection.handle, ptr) { (ptr, size, nMemb, privateData) -> Int in
-            let realsize = size * nMemb
+        connectionQueue.async {
+            self.connections.add(connection)
+            let ptr = Unmanaged<Connection>.passUnretained(connection).toOpaque()
+            let _ = curlHelperSetOptWriteFunc(connection.handle, ptr) { (ptr, size, nMemb, privateData) -> Int in
+                let realsize = size * nMemb
+                
+                let pointee = Unmanaged<Connection>.fromOpaque(privateData!).takeUnretainedValue()
+                var bytes: [UInt8] = [UInt8](repeating: 0, count: realsize)
+                memcpy(&bytes, ptr!, realsize)
+                
+                pointee.append(bytes: bytes)
+                return realsize
+            }
             
-            let pointee = Unmanaged<Connection>.fromOpaque(privateData!).takeUnretainedValue()
-            var bytes: [UInt8] = [UInt8](repeating: 0, count: realsize)
-            memcpy(&bytes, ptr!, realsize)
-            
-            pointee.append(bytes: bytes)
-            return realsize
+            curl_multi_add_handle(self.curlHandle, connection.handle)
+            self.performActiveConnections()
         }
-        
-        curl_multi_add_handle(self.curlHandle, connection.handle)
-        self.performActiveConnections()
     }
     
     open func send(_ message: ApplePushMessage, to deviceTokens: [String], perDeviceResultHandler: @escaping ((_ result: Result) -> Void)) {
