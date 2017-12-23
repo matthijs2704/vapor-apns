@@ -131,7 +131,7 @@ open class VaporAPNS {
             
             curlHeaders = curl_slist_append(curlHeaders, "Authorization: bearer \(token)")
         }
-        curlHeaders = curl_slist_append(curlHeaders, "User-Agent: VaporAPNS/1.0.1")
+        curlHeaders = curl_slist_append(curlHeaders, "User-Agent: VaporAPNS")
         for header in headers {
             curlHeaders = curl_slist_append(curlHeaders, "\(header.key): \(header.value)")
         }
@@ -142,6 +142,7 @@ open class VaporAPNS {
         return Connection(handle: handle,
                           message: message,
                           token: deviceToken,
+                          headers: curlHeaders,
                           completionHandler: completionHandler)
     }
     
@@ -172,6 +173,7 @@ open class VaporAPNS {
     private class Connection: Equatable, Hashable {
         private(set) var data: Data = Data()
         let handle: UnsafeMutableRawPointer
+        let headers: UnsafeMutablePointer<curl_slist>?
         let messageId: String
         let token: String
         let completionHandler: (Result) -> Void
@@ -180,11 +182,19 @@ open class VaporAPNS {
             data.append(contentsOf: bytes)
         }
         
-        init(handle: UnsafeMutableRawPointer, message: ApplePushMessage, token: String, completionHandler: @escaping (Result) -> Void) {
+        init(handle: UnsafeMutableRawPointer, message: ApplePushMessage, token: String, headers: UnsafeMutablePointer<curl_slist>?, completionHandler: @escaping (Result) -> Void) {
             self.handle = handle
             self.messageId = message.messageId
             self.token = token
             self.completionHandler = completionHandler
+            self.headers = headers
+        }
+        
+        deinit {
+            // if the connection get's dealloced we can clenaup the
+            // curl structures as well
+            curl_slist_free_all(headers)
+            curl_easy_cleanup(handle)
         }
         
         var hashValue: Int { return messageId.hashValue }
@@ -240,10 +250,6 @@ open class VaporAPNS {
                                     deviceToken: connection.token,
                                     serviceStatus: .success)
         }
-        
-        // Do some cleanup
-        curl_easy_cleanup(connection.handle)
-        //            curl_slist_free_all(curlHeaders!)
         
         connection.completionHandler(result)
     }
