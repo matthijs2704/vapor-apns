@@ -41,7 +41,8 @@ open class VaporAPNS {
     
     private func createCurlMultiHandle() -> UnsafeMutableRawPointer {
         let curlHandle = curl_multi_init()
-        curlHelperSetMultiOpt(curlHandle, CURLMOPT_PIPELINING, CURLPIPE_MULTIPLEX)
+        // Apples APNS server don't support pipelining yet.
+        // curlHelperSetMultiOpt(curlHandle, CURLMOPT_PIPELINING, CURLPIPE_MULTIPLEX)
         return curlHandle!
     }
     
@@ -74,7 +75,8 @@ open class VaporAPNS {
         curlHelperSetOptBool(handle, CURLOPT_POST, CURL_TRUE)
         
         // Pipeline
-        curlHelperSetOptInt(handle, CURLOPT_PIPEWAIT, 1)
+        // Apples APNS server don't support pipelining yet.
+//        curlHelperSetOptInt(handle, CURLOPT_PIPEWAIT, 1)
         
         // setup payload
         
