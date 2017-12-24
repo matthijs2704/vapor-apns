@@ -18,6 +18,11 @@ extension String {
         return ecKey
     }
     
+    func collapseWhitespace() -> String {
+        let thecomponents = components(separatedBy: CharacterSet.whitespacesAndNewlines).filter { !$0.isEmpty }
+        return thecomponents.joined(separator: " ")
+    }
+    
     /// Converts the string (which is a path for the auth key) to a token string
     func tokenString() throws -> (privateKey: String, publicKey: String) {
         guard FileManager.default.fileExists(atPath: self) else {
