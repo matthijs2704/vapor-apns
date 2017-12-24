@@ -1,6 +1,5 @@
 import Dispatch
 import Foundation
-import SwiftString
 import JSON
 import CCurl
 import JSON
