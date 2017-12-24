@@ -203,7 +203,7 @@ open class VaporAPNS {
         static func == (lhs: Connection, rhs: Connection) -> Bool { return lhs.messageId == rhs.messageId }
     }
     
-    private var connections: NSMutableSet = []
+    private var connections: NSMutableSet = NSMutableSet()
     
     private func complete(connection: Connection) {
         connectionQueue.async {
