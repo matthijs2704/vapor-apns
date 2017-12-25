@@ -206,7 +206,6 @@ open class VaporAPNS {
             guard self.connections.contains(connection) else { return }
             self.connections.remove(connection)
             self.performQueue.async {
-                print(">>> END \(connection.messageId) for \(connection.token)")
                 curl_multi_remove_handle(self.curlHandle, connection.handle)
                 self.handleCompleted(connection: connection)
             }
@@ -258,19 +257,12 @@ open class VaporAPNS {
     
     private let performQueue: DispatchQueue = DispatchQueue(label: "VaporAPNS.curl_multi_perform")
     
-    private var runningConnectionsCount: Int32 = 0 {
-        didSet {
-            guard oldValue != runningConnectionsCount else { return }
-            print("runningConnectionsCount \(oldValue) -> \(runningConnectionsCount)")
-        }
-    }
+    private var runningConnectionsCount: Int32 = 0
     
     private var repeats = 0
     
     /// Core cURL-multi Loop is done here
     private func performActiveConnections() {
-        print("Now has \(self.connections.count) connections")
-        
         var code: CURLMcode = CURLM_CALL_MULTI_PERFORM
         
         var numfds: Int32 = 0
@@ -295,11 +287,10 @@ open class VaporAPNS {
         
         repeat {
             curlMessage = curl_multi_info_read(self.curlHandle, &numMessages)
-            print("\(numMessages)")
             if let message = curlMessage {
                 let handle = message.pointee.easy_handle
                 let msg = message.pointee.msg
-                print("Done msg: \(String(cString: curl_easy_strerror(message.pointee.data.result)))")
+                
                 if msg == CURLMSG_DONE {
                     self.connectionQueue.async {
                         
@@ -316,7 +307,7 @@ open class VaporAPNS {
                     
                     
                 } else {
-                    print("MSG: \(msg.rawValue)")
+                    print("Connection failiure: \(msg) \(String(cString: curl_easy_strerror(message.pointee.data.result)))")
                 }
             }
             
@@ -360,8 +351,7 @@ open class VaporAPNS {
             }
             
             self.performQueue.async {
-                print(">>> START \(connection.messageId) for \(connection.token)")
-                // self.curlHandle should only be touched on performQueue
+                // curlHandle should only be touched on performQueue
                 curl_multi_add_handle(self.curlHandle, connection.handle)
                 self.performActiveConnections()
             }
@@ -369,7 +359,6 @@ open class VaporAPNS {
     }
     
     open func send(_ message: ApplePushMessage, to deviceTokens: [String], perDeviceResultHandler: @escaping ((_ result: Result) -> Void)) {
-        print("Sending message to \(deviceTokens.count) devices")
         for deviceToken in deviceTokens {
             self.send(message, to: deviceToken, completionHandler: perDeviceResultHandler)
         }
