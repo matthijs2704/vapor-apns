@@ -330,6 +330,12 @@ open class VaporAPNS {
     
     // MARK: API
     
+    @available(*, unavailable, renamed: "send(to:completionHandler:)")
+    open func send(_ message: ApplePushMessage, to deviceToken: String) -> Result {
+        send(message, to: deviceToken, completionHandler: { _ in })
+        return Result.networkError(error: SimpleError.string(message: "API is deprecated use send(to:completionHandler:)"))
+    }
+    
     open func send(_ message: ApplePushMessage, to deviceToken: String, completionHandler: @escaping (Result) -> Void) {
         guard let connection = configureCurlHandle(for: message, to: deviceToken, completionHandler: completionHandler) else {
             completionHandler(Result.networkError(error: SimpleError.string(message: "Could not configure cURL")))
