@@ -127,6 +127,10 @@ open class Payload: JSONRepresentable {
             if hasMutableContent {
                 apsPayloadData["mutable-content"] = 1
             }
+
+            if let threadId = threadId {
+                apsPayloadData["thread-id"] = threadId
+            }
             
         }
         
